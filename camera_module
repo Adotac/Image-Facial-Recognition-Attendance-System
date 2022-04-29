@@ -1,0 +1,25 @@
+import cv2, time
+
+def openCamera():
+    video = cv2.VideoCapture(0)
+
+    while True:
+        check, frame = video.read()
+        # print(check)
+        # print(frame)
+        cv2.imshow("Video Capture", frame)
+        key = cv2.waitKey(1)
+
+        if key == ord('q'):
+            cv2.destroyWindow("Video Capture")
+            temp = frame
+            cv2.imshow("Image Capture", temp)
+            break
+
+    video.release()
+    cv2.waitKey(0)
+
+def captureImage(frame):
+    temp = frame
+
+openCamera()
