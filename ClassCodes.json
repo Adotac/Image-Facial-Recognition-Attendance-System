@@ -1,0 +1,92 @@
+{
+  "10001": {
+    "classCode": "10001",
+    "className": "Programming 1",
+    "altName": "Prog 1",
+    "classStart": {
+      "hr": 9,
+      "min": 0,
+      "p": "AM"
+    },
+    "classEnd": {
+      "hr": 10,
+      "min": 30,
+      "p": "AM"
+    },
+    "classDays": "MWF",
+    "department": "School of Computer Studies",
+    "altDep": "SCS"
+  },
+  "10002": {
+    "classCode": "10002",
+    "className": "Digital Visual and Art",
+    "altName": "DVA",
+    "classStart": {
+      "hr": 10,
+      "min": 30,
+      "p": "AM"
+    },
+    "classEnd": {
+      "hr": 12,
+      "min": 0,
+      "p": "PM"
+    },
+    "classDays": "TTH",
+    "department": "School of Computer Studies",
+    "altDep": "SCS"
+  },
+  "10003": {
+    "classCode": "10003",
+    "className": "Philosophy",
+    "altName": "Philo",
+    "classStart": {
+      "hr": 1,
+      "min": 0,
+      "p": "PM"
+    },
+    "classEnd": {
+      "hr": 2,
+      "min": 30,
+      "p": "PM"
+    },
+    "classDays": "MWF",
+    "department": "School of Education",
+    "altDep": "SOE"
+  },
+  "10004": {
+    "classCode": "10004",
+    "className": "Accounting",
+    "altName": "Acctg",
+    "classStart": {
+      "hr": 2,
+      "min": 30,
+      "p": "PM"
+    },
+    "classEnd": {
+      "hr": 3,
+      "min": 30,
+      "p": "PM"
+    },
+    "classDays": "MWF",
+    "department": "School of Business and Management",
+    "altDep": "SBM"
+  },
+  "10005": {
+    "classCode": "10005",
+    "className": "Data Structures and Algorithms",
+    "altName": "DSA",
+    "classStart": {
+      "hr": 3,
+      "min": 30,
+      "p": "PM"
+    },
+    "classEnd": {
+      "hr": 5,
+      "min": 0,
+      "p": "PM"
+    },
+    "classDays": "TTH",
+    "department": "School of Computer Studies",
+    "altDep": "SCS"
+  }
+}

@@ -4,16 +4,18 @@
 
 ## The main program
 import tkinter as tk
+from tkinter.ttk import Combobox
 from time import strftime
 import cv2
 import PIL.Image, PIL.ImageTk
+import json
 
 class App:
     def __init__(self, window, window_title, video_source=0):
         self.window = window
         self.window.title(window_title)
         self.window.geometry("1000x520+300+100")
-        self.window.resizable(width=False, height=False)
+        # self.window.resizable(width=False, height=False)
         self.video_source = video_source
         self.ok = False
 
@@ -21,12 +23,15 @@ class App:
         self.vid = VideoCapture(self.video_source)
         # Create a canvas that can fit the above video source size
         self.canvas = tk.Canvas(window, width=640, height=480)
-        # self.canvas.place(x=20, y=20)
         self.canvas.pack(side=tk.LEFT)
 
         self.timeDate = tk.Label(window, font=('times', 26, 'bold'), bg='yellow')
-        self.timeDate.place(x=645, y=10, width=400)
+        self.timeDate.place(x=645, y=10, width=350)
         self.TimeDate()
+
+        self.cBoxData = self.ClassSched()
+        self.cb = Combobox(window, values=self.cBoxData)
+        self.cb.place(x=645, y=100, width=350)
 
         # Button that lets the user take a snapshot
         self.btn_snapshot = tk.Button(window, text="Check Attendance", command=self.snapshot)
@@ -61,6 +66,19 @@ class App:
         time_string = strftime('%H:%M:%S %p \n %A, %x')  # time format
         self.timeDate.config(text=time_string)
         self.timeDate.after(1000, self.TimeDate)  # time delay of 1000 milliseconds
+
+    def ClassSched(self):
+        with open('ClassCodes.json') as json_file:
+            self.codes = json.load(json_file)
+            self.temp = list()
+            for i in self.codes:
+                self.temp.append(self.codes[i]['classCode'] + " " +
+                                 self.codes[i]['altName'] + " " +
+                                 self.codes[i]['classDays'] + " " +
+                                 str(self.codes[i]['classStart']['hr']) + ":" + str(self.codes[i]['classStart']['min']) + " " + self.codes[i]['classStart']['p'])
+
+        return tuple(self.temp)
+
 
 
 class VideoCapture:
