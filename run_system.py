@@ -10,6 +10,9 @@ import cv2
 import PIL.Image, PIL.ImageTk
 import json
 
+path = "cascades\data\haarcascade_frontalface_default.xml"
+face_cascade = cv2.CascadeClassifier(path)
+
 class App:
     def __init__(self, window, window_title, video_source=0):
         self.window = window
@@ -91,6 +94,7 @@ class VideoCapture:
     # To get frames
     def get_frame(self):
         if self.vid.isOpened():
+            self.edge_detection()
             ret, frame = self.vid.read()
             if ret:
                 # Return a boolean success flag and the current frame converted to BGR
@@ -99,6 +103,36 @@ class VideoCapture:
                 return (ret, None)
         else:
             return (None, None)
+
+    def edge_detection(self):
+        self.vid = cv2.VideoCapture(0) #captures video from built-in camera. (pass arg. '1' for external webcam & so on), video file can also be passed
+
+        while True:
+            check, frame = self.vid.read()
+            if check == False: #when the video/frames ends the 'check' besomes False and loop will break
+                break
+            
+            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) #converting frame to grayscale
+            faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.05, minNeighbors=5) #detecting faces in the frame
+            edges = cv2.Canny(gray_frame, 100, 200) #generating edge map using Canny Edge Detector
+            for(x,y,w,h) in faces:
+                print(x,y,w,h)
+                roi_gray = gray_frame[y:y+h, x:x+w] #cropping the face
+                roi_color = frame[y:y+h, x:x+w]
+                cv2.rectangle(frame, (x,y), (x+w, y+h), (0,255,0), 2) #drawing rectangle around the face
+                img_itm = "my_im.png"
+                cv2.imwrite(img_itm, roi_gray) #saving the cropped face
+                cv2.imshow('frame', frame)
+                cv2.imshow('gray', roi_gray)
+
+            cv2.imshow('result', edges) #displaying result (args: Name, Image to show)
+            
+            key = cv2.waitKey(1) #waits for 1ms
+            if key == ord('q'): #loop will break on pressing 'q'. (ord('q') will return the 'Ordinal Number' of 'q' (i.e: 113) and compare it with pressed key)
+                break
+            
+        self.vid.release()
+        cv2.destroyAllWindows()
 
     # Release the video source when the object is destroyed
     def __del__(self):
