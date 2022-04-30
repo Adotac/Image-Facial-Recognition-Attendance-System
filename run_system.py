@@ -10,6 +10,9 @@ import cv2
 import PIL.Image, PIL.ImageTk
 import json
 
+path = "cascades\data\haarcascade_frontalface_default.xml"
+face_cascade = cv2.CascadeClassifier(path)
+
 class App:
     def __init__(self, window, window_title, video_source=0):
         self.window = window
@@ -91,7 +94,9 @@ class VideoCapture:
     # To get frames
     def get_frame(self):
         if self.vid.isOpened():
+
             ret, frame = self.vid.read()
+            self.edge_detection(frame=frame)
             if ret:
                 # Return a boolean success flag and the current frame converted to BGR
                 return (ret, cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
@@ -99,6 +104,26 @@ class VideoCapture:
                 return (ret, None)
         else:
             return (None, None)
+
+# added by Bohol, Christopher
+    def edge_detection(self, frame):
+            
+            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) #converting frame to grayscale
+            faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.05, minNeighbors=5) #detecting faces in the frame
+            edges = cv2.Canny(gray_frame, 100, 200) #generating edge map using Canny Edge Detector
+            for(x,y,w,h) in faces:
+                # print(x,y,w,h)
+                roi_gray = gray_frame[y:y+h, x:x+w] #cropping the face
+                roi_color = frame[y:y+h, x:x+w]
+                cv2.rectangle(frame, (x,y), (x+w, y+h), (0,255,0), 2) #drawing rectangle around the face
+                # img_itm = "my_im.png"
+                # cv2.imwrite(img_itm, roi_gray) #saving the cropped face
+
+                # cv2.imshow('frame', frame)
+                # cv2.imshow('gray', roi_gray)
+
+            # cv2.imshow('result', edges) #displaying result (args: Name, Image to show)
+
 
     # Release the video source when the object is destroyed
     def __del__(self):
