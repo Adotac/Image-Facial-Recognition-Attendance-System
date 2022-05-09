@@ -10,9 +10,6 @@ import cv2
 import PIL.Image, PIL.ImageTk
 import json
 
-path = "cascades\data\haarcascade_frontalface_default.xml"
-face_cascade = cv2.CascadeClassifier(path)
-
 class App:
     def __init__(self, window, window_title, video_source=0):
         self.window = window
@@ -28,10 +25,12 @@ class App:
         self.canvas = tk.Canvas(window, width=640, height=480)
         self.canvas.pack(side=tk.LEFT)
 
+        # Display real time clock
         self.timeDate = tk.Label(window, font=('times', 26, 'bold'), bg='yellow')
         self.timeDate.place(x=645, y=10, width=350)
         self.TimeDate()
 
+        # A combo box to choose what class you're trying to check attendance to
         self.cBoxData = self.ClassSched()
         self.cb = Combobox(window, values=self.cBoxData)
         self.cb.place(x=645, y=100, width=350)
@@ -107,23 +106,23 @@ class VideoCapture:
 
 # added by Bohol, Christopher
     def edge_detection(self, frame):
-            
-            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) #converting frame to grayscale
-            faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.05, minNeighbors=5) #detecting faces in the frame
-            edges = cv2.Canny(gray_frame, 100, 200) #generating edge map using Canny Edge Detector
-            for(x,y,w,h) in faces:
-                # print(x,y,w,h)
-                roi_gray = gray_frame[y:y+h, x:x+w] #cropping the face
-                roi_color = frame[y:y+h, x:x+w]
-                cv2.rectangle(frame, (x,y), (x+w, y+h), (0,255,0), 2) #drawing rectangle around the face
-                # img_itm = "my_im.png"
-                # cv2.imwrite(img_itm, roi_gray) #saving the cropped face
+        path = "cascades\data\haarcascade_frontalface_default.xml"
+        face_cascade = cv2.CascadeClassifier(path)
+        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) #converting frame to grayscale
+        faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.05, minNeighbors=5) #detecting faces in the frame
+        edges = cv2.Canny(gray_frame, 100, 200) #generating edge map using Canny Edge Detector
+        for(x,y,w,h) in faces:
+            # print(x,y,w,h)
+            roi_gray = gray_frame[y:y+h, x:x+w] #cropping the face
+            roi_color = frame[y:y+h, x:x+w]
+            cv2.rectangle(frame, (x,y), (x+w, y+h), (0,255,0), 2) #drawing rectangle around the face
+            # img_itm = "my_im.png"
+            # cv2.imwrite(img_itm, roi_gray) #saving the cropped face
 
-                # cv2.imshow('frame', frame)
-                # cv2.imshow('gray', roi_gray)
+            # cv2.imshow('frame', frame)
+            # cv2.imshow('gray', roi_gray)
 
-            # cv2.imshow('result', edges) #displaying result (args: Name, Image to show)
-
+        # cv2.imshow('result', edges) #displaying result (args: Name, Image to show)
 
     # Release the video source when the object is destroyed
     def __del__(self):
