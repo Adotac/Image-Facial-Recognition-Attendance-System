@@ -14,7 +14,7 @@ import os
 import pickle
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-path = 'E:\School\GVA\Image-Facial-Recognition-Attendance-System\cascades\data\haarcascade_frontalface_default.xml'
+path = 'cascades\data\haarcascade_frontalface_default.xml'
 face_cascade = cv2.CascadeClassifier(path)
 recognizer = cv2.face.LBPHFaceRecognizer_create()
 recognizer.read("trained.yml")
