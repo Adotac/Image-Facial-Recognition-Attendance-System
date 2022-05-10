@@ -39,8 +39,30 @@ class App:
         self.canvas.pack(side=tk.TOP)
 
         self.timeDate = tk.Label(window, font=('Montserrat', 18, 'bold'), bg='#c4c4c4')
-        self.timeDate.place(x=19, y=488, width=602, height= 62)
+        self.timeDate.place(x=2, y=488, width=602, height= 62)
         self.TimeDate()
+
+        #Create an input for Teacher Name
+        self.teacherName = tk.Label(window, font=('Montserrat', 15, 'bold'), bg='#c4c4c4')
+        self.teacherName.place(x=-200, y=550, width=602, height= 40)
+        self.teacherName.config(text="Name: ")
+
+        # Create the Input for the Teacher Name
+        self.teacher_name_input = tk.Entry(window, font=('Montserrat', 15, 'bold'), bg='#ffffff')
+        self.teacher_name_input.place(x=40, y=580, width=200, height= 20)
+        # placeholder
+        self.teacher_name_input.insert(40, "Enter Teacher Name")
+        # remove when clicked
+        self.teacher_name_input.bind("<Button-1>", lambda event: self.teacher_name_input.delete(0, tk.END))
+
+        # Create the Input for the Teachers ID
+        self.teacher_id_input = tk.Entry(window, font=('Montserrat', 15, 'bold'), bg='#ffffff')
+        self.teacher_id_input.place(x=200, y=580, width=200, height= 20)
+        # placeholder
+        self.teacher_id_input.insert(40, "Enter Teacher ID")
+        # remove when clicked
+        self.teacher_id_input.bind("<Button-1>", lambda event: self.teacher_id_input.delete(0, tk.END))
+
 
         self.cBoxData = self.ClassSched()
         self.cb = Combobox(window, values=self.cBoxData)
