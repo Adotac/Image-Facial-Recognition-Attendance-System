@@ -6,16 +6,19 @@
 import tkinter as tk
 from tkinter.ttk import Combobox
 from time import strftime
+from turtle import color
 import cv2
 import PIL.Image, PIL.ImageTk
 import json
+import os
+import pickle
 
 class App:
     def __init__(self, window, window_title, video_source=0):
         self.window = window
         self.window.title(window_title)
-        self.window.geometry("1000x520+300+100")
-        # self.window.resizable(width=False, height=False)
+        self.window.geometry("645x730+300+100")
+        self.window.resizable(width=False, height=False)
         self.video_source = video_source
         self.ok = False
 
@@ -23,37 +26,39 @@ class App:
         self.vid = VideoCapture(self.video_source)
         # Create a canvas that can fit the above video source size
         self.canvas = tk.Canvas(window, width=640, height=480)
-        self.canvas.pack(side=tk.LEFT)
+        self.canvas.grid(row=0, column=0, columnspan=2)
 
-        # Display real time clock
-        self.timeDate = tk.Label(window, font=('times', 26, 'bold'), bg='yellow')
-        self.timeDate.place(x=645, y=10, width=350)
+        self.timeDate = tk.Label(window, font=('Montserrat', 18, 'bold'), bg='#c4c4c4')
+        self.timeDate.grid(row=1, column=0, columnspan=2, sticky='ew', ipady=15)
         self.TimeDate()
 
         # A combo box to choose what class you're trying to check attendance to
         self.cBoxData = self.ClassSched()
         self.cb = Combobox(window, values=self.cBoxData)
-        self.cb.place(x=645, y=100, width=350)
+        self.cb.grid(row=2, column=0, columnspan=2, ipadx=100, ipady=5, pady=15)
+
+        # employee ID input
+        self.eID = tk.Entry(window, bd=2)
+        self.eID.grid(row=3, column=0, columnspan=2, ipadx=110, ipady=5, )
 
         # Button that lets the user take a snapshot
-        self.btn_snapshot = tk.Button(window, text="Check Attendance", command=self.snapshot)
-        self.btn_snapshot.pack(side=tk.LEFT)
+        self.attend = tk.Button(window, text="Log Attendance", fg='white', bg='#0034D1', command=self.CheckAttendance)
+        self.attend.grid(row=4, column=0, sticky='e', ipadx=75, ipady=5, pady=10, padx=5)
 
         # quit button
-        self.btn_quit = tk.Button(window, text='QUIT', command=quit)
-        self.btn_quit.pack(side=tk.LEFT)
+        self.btn_quit = tk.Button(window, text='Exit', fg='white', bg='#0034D1', command=quit)
+        self.btn_quit.grid(row=4, column=1, sticky='w', ipadx=25, ipady=5, pady=10, padx=5)
 
         # After it is called once, the update method will be automatically called every delay milliseconds
         self.delay = 10
         self.update()
+        window.mainloop()
 
-        self.window.mainloop()
 
-    def snapshot(self):
-        # Get a frame from the video source
-        ret, frame = self.vid.get_frame()
-        # if ret:
-        #     cv2.imwrite("frame-" + time.strftime("%d-%m-%Y-%H-%M-%S") + ".jpg", cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
+    # function to be called that checks the empID input when attendance button is clicked
+    def CheckAttendance(self):
+        self.inputID = self.eID.get()
+        print(self.inputID)
 
     def update(self):
         # Get a frame from the video source
@@ -108,6 +113,15 @@ class VideoCapture:
     def edge_detection(self, frame):
         path = "cascades\data\haarcascade_frontalface_default.xml"
         face_cascade = cv2.CascadeClassifier(path)
+
+        # added and edited by Gadiane, James Christian
+        recognizer = cv2.face.LBPHFaceRecognizer_create()
+        recognizer.read("trained.yml")
+        labels = {"persons_name": 1}
+        with open("labels.pickle", 'rb') as f:
+            main_labels = pickle.load(f)
+            labels = {v: k for k, v in main_labels.items()}
+
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) #converting frame to grayscale
         faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.05, minNeighbors=5) #detecting faces in the frame
         edges = cv2.Canny(gray_frame, 100, 200) #generating edge map using Canny Edge Detector
@@ -115,14 +129,26 @@ class VideoCapture:
             # print(x,y,w,h)
             roi_gray = gray_frame[y:y+h, x:x+w] #cropping the face
             roi_color = frame[y:y+h, x:x+w]
-            cv2.rectangle(frame, (x,y), (x+w, y+h), (0,255,0), 2) #drawing rectangle around the face
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            id_, conf = recognizer.predict(roi_gray)
+            if conf >= 45 and conf <= 85:
+                print(id_)
+                print(labels[id_])
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                name = labels[id_]
+                color = (255, 255, 255)
+                stroke = 2
+                cv2.putText(frame, name, (x, y), font, 1, color, stroke, cv2.LINE_AA)
+                # cv2.putText(frame, name, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2) #BY: Bohol
+            # drawing rectangle around the face
+
             # img_itm = "my_im.png"
             # cv2.imwrite(img_itm, roi_gray) #saving the cropped face
 
             # cv2.imshow('frame', frame)
             # cv2.imshow('gray', roi_gray)
 
-        # cv2.imshow('result', edges) #displaying result (args: Name, Image to show)
+            # cv2.imshow('result', edges) #displaying result (args: Name, Image to show)
 
     # Release the video source when the object is destroyed
     def __del__(self):
@@ -134,6 +160,7 @@ class VideoCapture:
 def main():
     # Create a window and pass it to the Application object
     App(tk.Tk(), 'Attendance System')
+
 
 if __name__ == "__main__":
     main()
