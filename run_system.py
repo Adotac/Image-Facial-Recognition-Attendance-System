@@ -117,7 +117,6 @@ class VideoCapture:
         # added and edited by Gadiane, James Christian
         recognizer = cv2.face.LBPHFaceRecognizer_create()
         recognizer.read("trained.yml")
-        labels = {"persons_name": 1}
         with open("labels.pickle", 'rb') as f:
             main_labels = pickle.load(f)
             labels = {v: k for k, v in main_labels.items()}
@@ -131,7 +130,7 @@ class VideoCapture:
             roi_color = frame[y:y+h, x:x+w]
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
             id_, conf = recognizer.predict(roi_gray)
-            if conf >= 45 and conf <= 85:
+            if conf >= 40 and conf <= 85:
                 print(id_)
                 print(labels[id_])
                 font = cv2.FONT_HERSHEY_SIMPLEX
