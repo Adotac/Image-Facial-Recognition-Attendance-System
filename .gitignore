@@ -1,6 +1,7 @@
 .idea
 /venv
 /database
+/__pycache__
 *.avi
 *.jpg
 *.png

@@ -12,6 +12,14 @@ import PIL.Image, PIL.ImageTk
 import json
 import os
 import pickle
+import time
+import threading
+import screen_brightness_control as sbc
+
+class Flash_Window():
+    def __init__(self):
+        self.ww = tk.Toplevel()
+        self.ww.attributes("-fullscreen", True)
 
 class App:
     def __init__(self, window, window_title, video_source=0):
@@ -57,6 +65,17 @@ class App:
 
     # function to be called that checks the empID input when attendance button is clicked
     def CheckAttendance(self):
+        def flashbang():
+            curr_brightness = 60
+            flash = Flash_Window()
+            sbc.set_brightness(100)
+            time.sleep(0.5)
+            sbc.set_brightness(curr_brightness)
+            flash.ww.destroy()
+
+        flash_thread = threading.Thread(target=flashbang)
+        flash_thread.start()
+
         self.inputID = self.eID.get()
         print(self.inputID)
 
@@ -87,7 +106,6 @@ class App:
         return tuple(self.temp)
 
 
-
 class VideoCapture:
     def __init__(self, video_source=0):
         # Open the video source
@@ -111,7 +129,7 @@ class VideoCapture:
 
 # added by Bohol, Christopher
     def edge_detection(self, frame):
-        path = "cascades\data\haarcascade_frontalface_default.xml"
+        path = "cascades\data\haarcascade_frontalface_alt_tree.xml"
         face_cascade = cv2.CascadeClassifier(path)
 
         # added and edited by Gadiane, James Christian
@@ -122,32 +140,36 @@ class VideoCapture:
             labels = {v: k for k, v in main_labels.items()}
 
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) #converting frame to grayscale
-        faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.05, minNeighbors=5) #detecting faces in the frame
+        faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5) #detecting faces in the frame
         edges = cv2.Canny(gray_frame, 100, 200) #generating edge map using Canny Edge Detector
+
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        stroke = 2
         for(x,y,w,h) in faces:
             # print(x,y,w,h)
             roi_gray = gray_frame[y:y+h, x:x+w] #cropping the face
-            roi_color = frame[y:y+h, x:x+w]
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            # roi_color = frame[y:y+h, x:x+w]
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), stroke)
             id_, conf = recognizer.predict(roi_gray)
-            if conf >= 40 and conf <= 85:
-                print(id_)
-                print(labels[id_])
-                font = cv2.FONT_HERSHEY_SIMPLEX
+            if conf >= 40 and conf <= 80:
+                # print(id_)
+                # print(labels[id_])
                 name = labels[id_]
                 color = (255, 255, 255)
-                stroke = 2
                 cv2.putText(frame, name, (x, y), font, 1, color, stroke, cv2.LINE_AA)
                 # cv2.putText(frame, name, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2) #BY: Bohol
+            else:
+                name = "False"
+                color = (0, 0, 255)
+                cv2.putText(frame, name, (x, y), font, 1, color, stroke, cv2.LINE_AA)
+                cv2.rectangle(frame, (x, y), (x + w, y + h), color, stroke)
             # drawing rectangle around the face
 
             # img_itm = "my_im.png"
             # cv2.imwrite(img_itm, roi_gray) #saving the cropped face
-
-            # cv2.imshow('frame', frame)
             # cv2.imshow('gray', roi_gray)
-
-            # cv2.imshow('result', edges) #displaying result (args: Name, Image to show)
+            #
+            cv2.imshow('result', edges) #displaying result (args: Name, Image to show)
 
     # Release the video source when the object is destroyed
     def __del__(self):
@@ -156,10 +178,12 @@ class VideoCapture:
             cv2.destroyAllWindows()
 
 
+
 def main():
     # Create a window and pass it to the Application object
     App(tk.Tk(), 'Attendance System')
 
 
 if __name__ == "__main__":
-    main()
+    main_th = threading.Thread(target=main)
+    main_th.start()
