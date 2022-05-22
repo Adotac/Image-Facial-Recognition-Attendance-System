@@ -3,29 +3,42 @@
 ###
 
 ## The main program
+import web_api
 import tkinter as tk
 from tkinter.ttk import Combobox
 from time import strftime
-from turtle import color
 import cv2
 import PIL.Image, PIL.ImageTk
 import json
-import os
 import pickle
 import time
 import threading
 import screen_brightness_control as sbc
 
+api = web_api.API()
+
 class Flash_Window():
     def __init__(self):
         self.ww = tk.Toplevel()
         self.ww.attributes("-fullscreen", True)
+        # self.ww.configure(bg='blue')
+
+class Notifcation_Window():
+    def __init__(self, window, window_title, input_text):
+        self.ww = window
+        self.ww.title(window_title)
+        self.ww.geometry("200x200+300+100")
+        self.ww.resizable(width=False, height=False)
+
+        self.text = tk.Label(window, text=input_text, font=('Montserrat', 10, 'regular'))
+        self.text.place()
 
 class App:
+
     def __init__(self, window, window_title, video_source=0):
         self.window = window
         self.window.title(window_title)
-        self.window.geometry("645x730+300+100")
+        self.window.geometry("645x810+300+100")
         self.window.resizable(width=False, height=False)
         self.video_source = video_source
         self.ok = False
@@ -41,27 +54,30 @@ class App:
         self.TimeDate()
 
         # A combo box to choose what class you're trying to check attendance to
+        self.id_label = tk.Label(window, text='Class Schedule', font=('Montserrat', 12, 'bold'))
+        self.id_label.grid(row=2, column=0, columnspan=2, sticky='S' )
         self.cBoxData = self.ClassSched()
         self.cb = Combobox(window, values=self.cBoxData)
-        self.cb.grid(row=2, column=0, columnspan=2, ipadx=100, ipady=5, pady=15)
+        self.cb.grid(row=3, column=0, columnspan=2, ipadx=100, ipady=5, pady=15)
 
         # employee ID input
+        self.id_label = tk.Label(window, text='Faculty ID', font=('Montserrat', 12, 'bold'))
+        self.id_label.grid(row=4, column=0, columnspan=2, sticky='S' )
         self.eID = tk.Entry(window, bd=2)
-        self.eID.grid(row=3, column=0, columnspan=2, ipadx=110, ipady=5, )
+        self.eID.grid(row=5, column=0, columnspan=2, ipadx=110, ipady=5, )
 
         # Button that lets the user take a snapshot
         self.attend = tk.Button(window, text="Log Attendance", fg='white', bg='#0034D1', command=self.CheckAttendance)
-        self.attend.grid(row=4, column=0, sticky='e', ipadx=75, ipady=5, pady=10, padx=5)
+        self.attend.grid(row=6, column=0, sticky='e', ipadx=75, ipady=5, pady=10, padx=5)
 
         # quit button
         self.btn_quit = tk.Button(window, text='Exit', fg='white', bg='#0034D1', command=quit)
-        self.btn_quit.grid(row=4, column=1, sticky='w', ipadx=25, ipady=5, pady=10, padx=5)
+        self.btn_quit.grid(row=6, column=1, sticky='w', ipadx=25, ipady=5, pady=10, padx=5)
 
         # After it is called once, the update method will be automatically called every delay milliseconds
         self.delay = 10
         self.update()
         window.mainloop()
-
 
     # function to be called that checks the empID input when attendance button is clicked
     def CheckAttendance(self):
@@ -69,15 +85,24 @@ class App:
             curr_brightness = 60
             flash = Flash_Window()
             sbc.set_brightness(100)
-            time.sleep(0.5)
+            time.sleep(0.2)
+
+            # get id input
+            self.inputID = self.eID.get()
+            print(self.inputID)
+
             sbc.set_brightness(curr_brightness)
             flash.ww.destroy()
+
+            print(api.check_if_account_exists(id=1653206499))  # test
+
+        def checkClassSched():
+            pass
+
 
         flash_thread = threading.Thread(target=flashbang)
         flash_thread.start()
 
-        self.inputID = self.eID.get()
-        print(self.inputID)
 
     def update(self):
         # Get a frame from the video source
@@ -117,11 +142,11 @@ class VideoCapture:
     def get_frame(self):
         if self.vid.isOpened():
 
-            ret, frame = self.vid.read()
-            self.edge_detection(frame=frame)
+            ret, fr = self.vid.read()
+            self.edge_detection(frame=fr)
             if ret:
                 # Return a boolean success flag and the current frame converted to BGR
-                return (ret, cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
+                return (ret, cv2.cvtColor(fr, cv2.COLOR_RGB2BGR))
             else:
                 return (ret, None)
         else:
@@ -129,13 +154,13 @@ class VideoCapture:
 
 # added by Bohol, Christopher
     def edge_detection(self, frame):
-        path = "cascades\data\haarcascade_frontalface_alt_tree.xml"
+        path = "cascades\\data\\haarcascade_frontalface_alt_tree.xml"
         face_cascade = cv2.CascadeClassifier(path)
 
         # added and edited by Gadiane, James Christian
         recognizer = cv2.face.LBPHFaceRecognizer_create()
         recognizer.read("trained.yml")
-        with open("labels.pickle", 'rb') as f:
+        with open("labels.pkl", 'rb') as f:
             main_labels = pickle.load(f)
             labels = {v: k for k, v in main_labels.items()}
 
@@ -146,30 +171,29 @@ class VideoCapture:
         font = cv2.FONT_HERSHEY_SIMPLEX
         stroke = 2
         for(x,y,w,h) in faces:
+            point = (x, y)
             # print(x,y,w,h)
             roi_gray = gray_frame[y:y+h, x:x+w] #cropping the face
             # roi_color = frame[y:y+h, x:x+w]
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), stroke)
             id_, conf = recognizer.predict(roi_gray)
+
             if conf >= 40 and conf <= 80:
                 # print(id_)
                 # print(labels[id_])
-                name = labels[id_]
+                self.name = labels[id_]
                 color = (255, 255, 255)
-                cv2.putText(frame, name, (x, y), font, 1, color, stroke, cv2.LINE_AA)
+                cv2.putText(frame, self.name, point, font, 1, color, stroke, cv2.LINE_AA)
                 # cv2.putText(frame, name, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2) #BY: Bohol
             else:
                 name = "False"
                 color = (0, 0, 255)
-                cv2.putText(frame, name, (x, y), font, 1, color, stroke, cv2.LINE_AA)
-                cv2.rectangle(frame, (x, y), (x + w, y + h), color, stroke)
+                cv2.putText(frame, name, point, font, 1, color, stroke, cv2.LINE_AA)
+                cv2.rectangle(frame, point, (x + w, y + h), color, stroke)
             # drawing rectangle around the face
 
-            # img_itm = "my_im.png"
-            # cv2.imwrite(img_itm, roi_gray) #saving the cropped face
             # cv2.imshow('gray', roi_gray)
-            #
-            cv2.imshow('result', edges) #displaying result (args: Name, Image to show)
+            # cv2.imshow('result', edges) #displaying result (args: Name, Image to show)
 
     # Release the video source when the object is destroyed
     def __del__(self):
