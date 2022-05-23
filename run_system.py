@@ -16,6 +16,8 @@ import threading
 import screen_brightness_control as sbc
 
 api = web_api.API()
+CamScaleW = 645
+CamScaleH = 810
 
 class Flash_Window():
     def __init__(self):
@@ -38,7 +40,7 @@ class App:
     def __init__(self, window, window_title, video_source=0):
         self.window = window
         self.window.title(window_title)
-        self.window.geometry("645x810+300+100")
+        self.window.geometry(str(CamScaleW)+"x"+ str(CamScaleH) +"+300+100")
         self.window.resizable(width=False, height=False)
         self.video_source = video_source
         self.ok = False
@@ -164,27 +166,57 @@ class VideoCapture:
             main_labels = pickle.load(f)
             labels = {v: k for k, v in main_labels.items()}
 
+        HSV_cv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
+        YCbCr_cv = cv2.cvtColor(frame, cv2.COLOR_RGB2YCrCb)
+        LUV_cv = cv2.cvtColor(frame, cv2.COLOR_RGB2LUV)
+
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) #converting frame to grayscale
+        HSV_cv = cv2.cvtColor(HSV_cv, cv2.COLOR_BGR2GRAY)
+        YCbCr_cv = cv2.cvtColor(YCbCr_cv, cv2.COLOR_BGR2GRAY)
+        LUV_cv = cv2.cvtColor(LUV_cv, cv2.COLOR_BGR2GRAY)
+
         faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5) #detecting faces in the frame
-        edges = cv2.Canny(gray_frame, 100, 200) #generating edge map using Canny Edge Detector
+        # edges = cv2.Canny(gray_frame, 100, 200) #generating edge map using Canny Edge Detector
 
         font = cv2.FONT_HERSHEY_SIMPLEX
+        fScale = (CamScaleW * CamScaleH) / (900 * 900)
         stroke = 2
         for(x,y,w,h) in faces:
             point = (x, y)
             # print(x,y,w,h)
-            roi_gray = gray_frame[y:y+h, x:x+w] #cropping the face
-            # roi_color = frame[y:y+h, x:x+w]
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), stroke)
-            id_, conf = recognizer.predict(roi_gray)
+            roi_gray = gray_frame[y:y+h, x:x+w] #cropping the face
+            HSV_frame = HSV_cv[y:y+h, x:x+w]
+            YCbCr_frame = YCbCr_cv[y:y+h, x:x+w]
+            LUV_frame = LUV_cv[y:y+h, x:x+w]
 
-            if conf >= 40 and conf <= 80:
-                # print(id_)
+            id_1, conf1 = recognizer.predict(roi_gray)
+            id_2, conf2 = recognizer.predict(HSV_frame)
+            id_3, conf3 = recognizer.predict(YCbCr_frame)
+            id_4, conf4 = recognizer.predict(LUV_frame)
+
+            if conf4 >= 40 and conf4 <= 80:
+                print("LUV!!")
                 # print(labels[id_])
-                self.name = labels[id_]
+                self.name = labels[id_4]
                 color = (255, 255, 255)
-                cv2.putText(frame, self.name, point, font, 1, color, stroke, cv2.LINE_AA)
+                cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
                 # cv2.putText(frame, name, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2) #BY: Bohol
+            elif conf3 >= 40 and conf3 <= 80:
+                print("YCbCr!!!!")
+                self.name = labels[id_3]
+                color = (255, 255, 255)
+                cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
+            elif conf2 >= 40 and conf2 <= 80:
+                print("HSV!!")
+                self.name = labels[id_2]
+                color = (255, 255, 255)
+                cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
+            elif conf1 >= 40 and conf1 <= 80:
+                print("grayscale!!")
+                self.name = labels[id_1]
+                color = (255, 255, 255)
+                cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
             else:
                 name = "False"
                 color = (0, 0, 255)

@@ -7,7 +7,7 @@ load_dotenv()
 class API():
     def __init__(self):
         # self.url = str(os.getenv('DEPLOYED_API'))  # Deployed URL
-        self.url = str(os.getenv('LOCAL_API') )  # Local URL
+        self.url = str(os.getenv('LOCAL_API'))  # Local URL
 
     def get_account(self, id):
         return requests.get(url=self.url + "user/getAccount/" + str(id))
