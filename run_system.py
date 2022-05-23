@@ -14,10 +14,45 @@ import pickle
 import time
 import threading
 import screen_brightness_control as sbc
+import csv
 
 api = web_api.API()
 CamScaleW = 645
 CamScaleH = 810
+csvData = [{'x': 0, 'y': 0, 'w': 0, 'h': 0}]
+
+def get_rect_min():
+    min = [999, 999, 999, 999]
+    with open('rectAvg.csv', 'r') as f:
+        reader = csv.reader(f, skipinitialspace=True, delimiter=',')
+        next(reader, None)  # skip the headers
+        for row in reader:
+            # print(row)
+            if (int(row[0]) < min[0]) and \
+                    (int(row[1]) < min[1]) and \
+                    (int(row[2]) < min[2]) and \
+                    (int(row[3]) < min[3]):
+                min = [int(row[0]), int(row[1]), int(row[2]), int(row[3])]
+
+    print(min)
+    return min
+
+def get_rect_max():
+    max = [999, 999, 999, 999]
+    with open('rectAvg.csv', 'r') as f:
+        reader = csv.reader(f, skipinitialspace=True, delimiter=',')
+        next(reader, None)  # skip the headers
+        for row in reader:
+            if (int(row[0]) > max[0]) and \
+                    (int(row[1]) > max[1]) and \
+                    (int(row[2]) > max[2]) and \
+                    (int(row[3]) > max[3]):
+                max = [int(row[0]), int(row[1]), int(row[2]), int(row[3])]
+
+    return max
+
+rect_min = get_rect_min()
+rect_max = get_rect_max()
 
 class Flash_Window():
     def __init__(self):
@@ -146,6 +181,7 @@ class VideoCapture:
 
             ret, fr = self.vid.read()
             self.edge_detection(frame=fr)
+            # self.rectAvg_to_csv(data=csvData)  # Enable only if you want to get the average again
             if ret:
                 # Return a boolean success flag and the current frame converted to BGR
                 return (ret, cv2.cvtColor(fr, cv2.COLOR_RGB2BGR))
@@ -154,12 +190,31 @@ class VideoCapture:
         else:
             return (None, None)
 
+    def rectAvg_to_csv(self, data):
+        header = ['x', 'y', 'w', 'h']
+        # open the file in the write mode
+        with open('rectAvg.csv', 'w+') as f:
+            # create the csv writer
+            writer = csv.DictWriter(f, fieldnames=header)
+            writer.writeheader()
+            writer.writerows(data)
+
+
+
 # added by Bohol, Christopher
     def edge_detection(self, frame):
+
+        def appendRect(_x,_y,_w,_h):
+            csvData.append({'x': _x, 'y': _y, 'w': _w, 'h': _h})
+            # csvData.append(y)
+            # csvData.append(w)
+            # csvData.append(h)
+
         path = "cascades\\data\\haarcascade_frontalface_alt_tree.xml"
         face_cascade = cv2.CascadeClassifier(path)
 
         # added and edited by Gadiane, James Christian
+        # modified by Montero, Joshua - Color Spaces discrimination
         recognizer = cv2.face.LBPHFaceRecognizer_create()
         recognizer.read("trained.yml")
         with open("labels.pkl", 'rb') as f:
@@ -183,7 +238,7 @@ class VideoCapture:
         stroke = 2
         for(x,y,w,h) in faces:
             point = (x, y)
-            # print(x,y,w,h)
+            print(x,y,w,h)
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), stroke)
             roi_gray = gray_frame[y:y+h, x:x+w] #cropping the face
             HSV_frame = HSV_cv[y:y+h, x:x+w]
@@ -195,43 +250,65 @@ class VideoCapture:
             id_3, conf3 = recognizer.predict(YCbCr_frame)
             id_4, conf4 = recognizer.predict(LUV_frame)
 
-            if conf4 >= 40 and conf4 <= 80:
-                print("LUV!!")
-                # print(labels[id_])
-                self.name = labels[id_4]
-                color = (255, 255, 255)
-                cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
-                # cv2.putText(frame, name, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2) #BY: Bohol
-            elif conf3 >= 40 and conf3 <= 80:
-                print("YCbCr!!!!")
-                self.name = labels[id_3]
-                color = (255, 255, 255)
-                cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
-            elif conf2 >= 40 and conf2 <= 80:
-                print("HSV!!")
-                self.name = labels[id_2]
-                color = (255, 255, 255)
-                cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
-            elif conf1 >= 40 and conf1 <= 80:
-                print("grayscale!!")
-                self.name = labels[id_1]
-                color = (255, 255, 255)
-                cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
-            else:
-                name = "False"
-                color = (0, 0, 255)
-                cv2.putText(frame, name, point, font, 1, color, stroke, cv2.LINE_AA)
-                cv2.rectangle(frame, point, (x + w, y + h), color, stroke)
-            # drawing rectangle around the face
+            if (rect_min[0] < x and rect_min[1] < y and rect_min[2] < w and rect_min[3] < h) and \
+                    (rect_max[0] > x and rect_max[1] > y and rect_max[2] > w and rect_max[3] > h):
 
-            # cv2.imshow('gray', roi_gray)
+                # if conf4 >= 65 and conf4 <= 70:
+                #     print("LUV!!")
+                #     # print(labels[id_])
+                #     # appendRect(x,y,w,h)
+                #     self.name = labels[id_4]
+                #     color = (255, 255, 255)
+                #     cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
+                #     continue
+
+                if conf2 >= 50 and conf2 <= 80:
+                    print("HSV!!")
+                    # appendRect(x, y, w, h)
+                    self.name = labels[id_2]
+                    color = (255, 255, 255)
+                    cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
+                    continue
+                if conf3 >= 65 and conf3 <= 80:
+                    print("YCbCr!!")
+                    # appendRect(x, y, w, h)
+                    self.name = "False"
+                    color = (0, 0, 255)
+                    cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
+                    cv2.rectangle(frame, point, (x + w, y + h), color, stroke)
+                    # continue
+                # if conf1 >= 75 and conf1 <= 80:
+                #     print("grayscale!!!!")
+                #     # appendRect(x,y,w,h)
+                #     self.name = labels[id_1]
+                #     color = (255, 255, 255)
+                #     cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
+                else:
+                    name = "False"
+                    color = (0, 0, 255)
+                    cv2.putText(frame, name, point, font, fScale, color, stroke, cv2.LINE_AA)
+                    cv2.rectangle(frame, point, (x + w, y + h), color, stroke)
+                # drawing rectangle around the face
+            else:
+                name = "Position face properly..."
+                color = (255, 0, 255)
+                cv2.putText(frame, name, point, font, fScale, color, stroke, cv2.LINE_AA)
+                cv2.rectangle(frame, point, (x + w, y + h), color, stroke)
+
+            cv2.imshow('gray', roi_gray)
+            cv2.imshow('HSV', HSV_frame)
+            cv2.imshow('YCC', YCbCr_frame)
+            cv2.imshow('LUV', LUV_frame)
             # cv2.imshow('result', edges) #displaying result (args: Name, Image to show)
+
+
 
     # Release the video source when the object is destroyed
     def __del__(self):
         if self.vid.isOpened():
             self.vid.release()
             cv2.destroyAllWindows()
+
 
 
 
