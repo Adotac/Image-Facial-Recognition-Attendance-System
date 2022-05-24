@@ -156,7 +156,7 @@ class App:
         self.timeDate.after(1000, self.TimeDate)  # time delay of 1000 milliseconds
 
     def ClassSched(self):
-        with open(dir_path + '/' + 'ClassCodes.json') as json_file:
+        with open('ClassCodes.json') as json_file:
             self.codes = json.load(json_file)
             self.temp = list()
             for i in self.codes:
