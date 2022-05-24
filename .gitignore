@@ -1,6 +1,11 @@
 .idea
 /venv
 /database
+/__pycache__
+/treeClass
 *.avi
 *.jpg
 *.png
+*.pickle
+*.zip
+*.env
