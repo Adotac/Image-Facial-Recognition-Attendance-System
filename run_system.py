@@ -15,6 +15,8 @@ import time
 import threading
 import screen_brightness_control as sbc
 import csv
+from Detector import Detector
+import numpy as np
 
 api = web_api.API()
 CamScaleW = 645
@@ -26,6 +28,7 @@ def get_rect_min():
     with open('rectAvg.csv', 'r') as f:
         reader = csv.reader(f, skipinitialspace=True, delimiter=',')
         next(reader, None)  # skip the headers
+        next(reader, None)  # skip the init values
         for row in reader:
             # print(row)
             if (int(row[0]) < min[0]) and \
@@ -38,7 +41,7 @@ def get_rect_min():
     return min
 
 def get_rect_max():
-    max = [999, 999, 999, 999]
+    max = [0, 0, 0, 0]
     with open('rectAvg.csv', 'r') as f:
         reader = csv.reader(f, skipinitialspace=True, delimiter=',')
         next(reader, None)  # skip the headers
@@ -171,6 +174,8 @@ class App:
 class VideoCapture:
     def __init__(self, video_source=0):
         # Open the video source
+        self.source = video_source
+        self.obj_detector = Detector(videopath=self.source)
         self.vid = cv2.VideoCapture(video_source)
         if not self.vid.isOpened():
             raise ValueError("Unable to open video source", video_source)
@@ -180,9 +185,11 @@ class VideoCapture:
         if self.vid.isOpened():
 
             ret, fr = self.vid.read()
-            self.edge_detection(frame=fr)
-            # self.rectAvg_to_csv(data=csvData)  # Enable only if you want to get the average again
             if ret:
+                self.edge_detection(frame=fr)
+                self.obj_detection(frame=fr)
+                # self.rectAvg_to_csv(data=csvData)  # Enable only if you want to get the average again
+
                 # Return a boolean success flag and the current frame converted to BGR
                 return (ret, cv2.cvtColor(fr, cv2.COLOR_RGB2BGR))
             else:
@@ -193,22 +200,40 @@ class VideoCapture:
     def rectAvg_to_csv(self, data):
         header = ['x', 'y', 'w', 'h']
         # open the file in the write mode
-        with open('rectAvg.csv', 'w+') as f:
+        with open('rectAvg.csv', 'w+', newline='') as f:
             # create the csv writer
             writer = csv.DictWriter(f, fieldnames=header)
             writer.writeheader()
             writer.writerows(data)
 
+# added by Montero, Joshua & Gadianne, James & Bohol, Christopher
+    def obj_detection(self, frame):
+        classLabelIDs, confidence, bboxes = self.obj_detector.net.detect(frame, confThreshold=0.4)
+        bboxes = list(bboxes)
+        confidence = list(np.array(confidence).reshape(1, -1)[0])
+        confidence = list(map(float, confidence))
 
+        bboxIdx = cv2.dnn.NMSBoxes(bboxes, confidence, score_threshold=0.5, nms_threshold=0.2)
+
+        if len(bboxIdx) != 0:
+            for i in range(0, len(bboxIdx)):
+                bbox = bboxes[np.squeeze(bboxIdx[i])]
+                classConfidence = confidence[np.squeeze(bboxIdx[i])]
+                classLabelID = np.squeeze(classLabelIDs[[np.squeeze(bboxIdx[i])]])
+                classesLabel = self.obj_detector.classesList[classLabelID]
+                classColor = [int(c) for c in self.obj_detector.colorList[classLabelID]]
+
+                objText = "{}:{:.4f}".format(classesLabel, classConfidence)
+
+                x,y,w,h = bbox
+                cv2.rectangle(frame, (x, y), (x+w, y+h), color=classColor, thickness=2)
+                cv2.putText(frame, objText, (x, y-10), cv2.FONT_HERSHEY_PLAIN, 1, classColor, 2)
 
 # added by Bohol, Christopher
     def edge_detection(self, frame):
 
         def appendRect(_x,_y,_w,_h):
             csvData.append({'x': _x, 'y': _y, 'w': _w, 'h': _h})
-            # csvData.append(y)
-            # csvData.append(w)
-            # csvData.append(h)
 
         path = "cascades\\data\\haarcascade_frontalface_alt_tree.xml"
         face_cascade = cv2.CascadeClassifier(path)
@@ -240,15 +265,15 @@ class VideoCapture:
             point = (x, y)
             print(x,y,w,h)
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), stroke)
-            roi_gray = gray_frame[y:y+h, x:x+w] #cropping the face
+            # roi_gray = gray_frame[y:y+h, x:x+w] #cropping the face
             HSV_frame = HSV_cv[y:y+h, x:x+w]
             YCbCr_frame = YCbCr_cv[y:y+h, x:x+w]
-            LUV_frame = LUV_cv[y:y+h, x:x+w]
+            # LUV_frame = LUV_cv[y:y+h, x:x+w]
 
-            id_1, conf1 = recognizer.predict(roi_gray)
+            # id_1, conf1 = recognizer.predict(roi_gray)
             id_2, conf2 = recognizer.predict(HSV_frame)
             id_3, conf3 = recognizer.predict(YCbCr_frame)
-            id_4, conf4 = recognizer.predict(LUV_frame)
+            # id_4, conf4 = recognizer.predict(LUV_frame)
 
             if (rect_min[0] < x and rect_min[1] < y and rect_min[2] < w and rect_min[3] < h) and \
                     (rect_max[0] > x and rect_max[1] > y and rect_max[2] > w and rect_max[3] > h):
@@ -295,12 +320,11 @@ class VideoCapture:
                 cv2.putText(frame, name, point, font, fScale, color, stroke, cv2.LINE_AA)
                 cv2.rectangle(frame, point, (x + w, y + h), color, stroke)
 
-            cv2.imshow('gray', roi_gray)
+            # cv2.imshow('gray', roi_gray)
             cv2.imshow('HSV', HSV_frame)
             cv2.imshow('YCC', YCbCr_frame)
-            cv2.imshow('LUV', LUV_frame)
+            # cv2.imshow('LUV', LUV_frame)
             # cv2.imshow('result', edges) #displaying result (args: Name, Image to show)
-
 
 
     # Release the video source when the object is destroyed
