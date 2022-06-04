@@ -17,6 +17,7 @@ import screen_brightness_control as sbc
 import csv
 from Detector import Detector
 import numpy as np
+import time
 
 api = web_api.API()
 CamScaleW = 645
@@ -108,7 +109,7 @@ class App:
 
         # Button that lets the user take a snapshot
         self.attend = tk.Button(window, text="Log Attendance", fg='white', bg='#0034D1', command=self.CheckAttendance)
-        self.attend.grid(row=6, column=0, sticky='e', ipadx=75, ipady=5, pady=10, padx=5)
+        self.attend.grid(row=0, column=0, sticky='e', ipadx=75, ipady=5, pady=10, padx=5)
 
         # quit button
         self.btn_quit = tk.Button(window, text='Exit', fg='white', bg='#0034D1', command=quit)
@@ -130,11 +131,27 @@ class App:
             # get id input
             self.inputID = self.eID.get()
             print(self.inputID)
+            # get the time with 12hr format
+            self.time = time.strftime("%I:%M:%S %p")
+            print(self.time)
+            # get the date with day, month, year format
+            self.date = time.strftime("%d/%m/%Y")
+            print(self.date)
+
+            # get the class schedule from cbox
+            self.class_schedule = self.cb.get()
+            print(self.class_schedule)
+
+            # split the content in class_schedule
+            self.class_schedule = self.class_schedule.split(' , ')
+            print(self.class_schedule)
 
             sbc.set_brightness(curr_brightness)
             flash.ww.destroy()
+            print("ddd")
+            print(api.check_if_account_exists(self.inputID))  # test
 
-            print(api.check_if_account_exists(id=1653206499))  # test
+
 
         def checkClassSched():
             pass
@@ -163,9 +180,9 @@ class App:
             self.codes = json.load(json_file)
             self.temp = list()
             for i in self.codes:
-                self.temp.append(self.codes[i]['classCode'] + " " +
-                                 self.codes[i]['altName'] + " " +
-                                 self.codes[i]['classDays'] + " " +
+                self.temp.append(self.codes[i]['classCode'] + " , " +
+                                 self.codes[i]['altName'] + " , " +
+                                 self.codes[i]['classDays'] + " , " +
                                  str(self.codes[i]['classStart']['hr']) + ":" + str(self.codes[i]['classStart']['min']) + " " + self.codes[i]['classStart']['p'])
 
         return tuple(self.temp)
