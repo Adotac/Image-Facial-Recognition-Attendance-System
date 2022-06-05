@@ -3,6 +3,7 @@
 ###
 
 ## The main program
+from datetime import datetime, datetime, timedelta
 import web_api
 import tkinter as tk
 from tkinter.ttk import Combobox
@@ -131,9 +132,10 @@ class App:
             # get id input
             self.inputID = self.eID.get()
             print(self.inputID)
-            # get the time with 12hr format
-            self.time = time.strftime("%I:%M:%S %p")
+            # get the time with 12hr format HH:MM AM/PM
+            self.time = time.strftime("%I:%M %p")
             print(self.time)
+            
             # get the date with day, month, year format
             self.date = time.strftime("%d/%m/%Y")
             print(self.date)
@@ -150,64 +152,81 @@ class App:
             flash.ww.destroy()
             print("ddd")
             print(api.check_if_account_exists(self.inputID))  # test
+            self.remark = remarks()
+            
 
+
+
+
+        def remarks():
             # get the index of sch_time in class_schedule
             self.sch_time = self.class_schedule[3]
             print(self.sch_time)
 
             # split the sch_time by spaces
-            self.sch_time = self.sch_time.split(' ')
+            self.sch_time = self.sch_time.split(' - ')
             print(self.sch_time)
 
             self.start = self.sch_time[0]
             print(self.start)
 
-            self.end = self.sch_time[3]
+            self.end = self.sch_time[1]
             print(self.end)
 
-            self.remarks = ""
+            # convert the start and end time to 24hr format
+            self.start = time.strptime(self.start, "%I:%M %p")
+            self.start = time.strftime("%H:%M", self.start)
+            print(self.start)
 
-            # check if the self.time is between the start and end time
-            if (self.time > self.start) and (self.time < self.end):
-                # check if time falls within 15 minutes of the start time
-                if (self.time > (self.start + ":00")) and (self.time < (self.start + ":15")):
-                    self.remarks = "On Time"
-                    print(self.remarks)
-                    # check if the employee ID is in the database
-                    # if api.check_if_account_exists(self.inputID):
-                    #     print("Employee ID is in the database")
-                    # else:
-                    #     print("Employee ID is not in the database")
-                # check if time falls within start time and 15 minutes before end time
-                elif (self.time > (self.start + ":15")) and (self.time < (self.end + ":45")):
-                    self.remarks = "Late"
-                    print(self.remarks)
-                    # # check if the employee ID is in the database
-                    # if api.check_if_account_exists(self.inputID):
-                    #     print("Employee ID is in the database")
-                    # else:
-                    #     print("Employee ID is not in the database")
-            else:
-                # check if it is early than the start time
-                if (self.time < self.start):
-                    self.remarks = "Early"
-                    print(self.remarks)
-                    # check if the employee ID is in the database
-                    # if api.check_if_account_exists(self.inputID):
-                    #     print("Employee ID is in the database")
-                    # else:
-                    #     print("Employee ID is not in the database")
-                # check if its is after the end time
-                elif (self.time > self.end):
-                    self.remarks = "Late"
-                    print(self.remarks)
-                    # check if the employee ID is in the database
-                    # if api.check_if_account_exists(self.inputID):
-                    #     print("Employee ID is in the database")
-                    # else:
-                    #     print("Employee ID is not in the database")
+            self.end = time.strptime(self.end, "%I:%M %p")
+            self.end = time.strftime("%H:%M", self.end)
+            print(self.end)
 
+            self.time = time.strptime(self.time, "%I:%M %p")
+            self.time = time.strftime("%H:%M", self.time)
+            print(self.time)
+            
+            # split the start and end time by :
+            self.startS = self.start.split(':')
+            print(self.startS)
 
+            # split the time by :
+            self.timeX = self.time.split(':')
+            print(self.timeX)
+
+            # convert the start and end time to int
+            self.startInts = [int(i) for i in self.startS]
+            print(self.startInts)
+
+            # convert the time to int
+            self.timeS = [int(i) for i in self.timeX]
+            print(self.timeS)
+
+            self.add = self.startInts[1] + 15
+            print(self.add)
+
+            # check if the time is between the start and end time
+            if self.time >= self.start and self.time <= self.end:
+                # check if self.time is within 15mins of the start time
+                if self.timeS[1] >= self.startInts[1] and self.timeS[1] <= self.add:
+                    self.remark = "On Time"
+                    print(self.remark)
+                # check if the self.time is beyond 15mins of the start time and lesser than equal to the end time
+                # elif self.timeS[1] > self.add and self.timeS[1] <= self.end:
+                #     self.remark = "Late"
+                #     print(self.remark)
+            # check if the self.time is beyond the end time
+            elif self.time > self.end:
+                self.remark = "Absent"
+                print(self.remark)
+            # check if the self.time is before the start time
+            elif self.time < self.start:
+                self.remark = "Early"
+                print(self.remark)
+
+            
+
+            
 
         def checkClassSched():
             pass
