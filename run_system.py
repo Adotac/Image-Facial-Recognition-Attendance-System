@@ -190,6 +190,9 @@ class App:
             self.startS = self.start.split(':')
             print(self.startS)
 
+            self.endS = self.end.split(':')
+            print(self.endS)
+
             # split the time by :
             self.timeX = self.time.split(':')
             print(self.timeX)
@@ -198,6 +201,9 @@ class App:
             self.startInts = [int(i) for i in self.startS]
             print(self.startInts)
 
+            self.endInts = [int(i) for i in self.endS]
+            print(self.endInts)
+
             # convert the time to int
             self.timeS = [int(i) for i in self.timeX]
             print(self.timeS)
@@ -205,28 +211,23 @@ class App:
             self.add = self.startInts[1] + 15
             print(self.add)
 
-            # check if the time is between the start and end time
-            if self.time >= self.start and self.time <= self.end:
-                # check if self.time is within 15mins of the start time
+            if self.timeS[0] == self.startInts[0]:
                 if self.timeS[1] >= self.startInts[1] and self.timeS[1] <= self.add:
-                    self.remark = "On Time"
+                    self.remark = "Present"
                     print(self.remark)
-                # check if the self.time is beyond 15mins of the start time and lesser than equal to the end time
-                # elif self.timeS[1] > self.add and self.timeS[1] <= self.end:
-                #     self.remark = "Late"
-                #     print(self.remark)
-            # check if the self.time is beyond the end time
-            elif self.time > self.end:
+                    return self.remark
+                elif self.timeS[1] >= self.add:
+                    self.remark = "Late"
+                    print(self.remark)
+                    return self.remark
+            if self.timeS[0] > self.startInts[0]:
                 self.remark = "Absent"
                 print(self.remark)
-            # check if the self.time is before the start time
-            elif self.time < self.start:
+                return self.remark
+            if self.timeS[1] < self.startInts[0]:
                 self.remark = "Early"
                 print(self.remark)
-
-            
-
-            
+                return self.remark
 
         def checkClassSched():
             pass
