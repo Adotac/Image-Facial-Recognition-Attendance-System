@@ -151,6 +151,62 @@ class App:
             print("ddd")
             print(api.check_if_account_exists(self.inputID))  # test
 
+            # get the index of sch_time in class_schedule
+            self.sch_time = self.class_schedule[3]
+            print(self.sch_time)
+
+            # split the sch_time by spaces
+            self.sch_time = self.sch_time.split(' ')
+            print(self.sch_time)
+
+            self.start = self.sch_time[0]
+            print(self.start)
+
+            self.end = self.sch_time[3]
+            print(self.end)
+
+            self.remarks = ""
+
+            # check if the self.time is between the start and end time
+            if (self.time > self.start) and (self.time < self.end):
+                # check if time falls within 15 minutes of the start time
+                if (self.time > (self.start + ":00")) and (self.time < (self.start + ":15")):
+                    self.remarks = "On Time"
+                    print(self.remarks)
+                    # check if the employee ID is in the database
+                    # if api.check_if_account_exists(self.inputID):
+                    #     print("Employee ID is in the database")
+                    # else:
+                    #     print("Employee ID is not in the database")
+                # check if time falls within start time and 15 minutes before end time
+                elif (self.time > (self.start + ":15")) and (self.time < (self.end + ":45")):
+                    self.remarks = "Late"
+                    print(self.remarks)
+                    # # check if the employee ID is in the database
+                    # if api.check_if_account_exists(self.inputID):
+                    #     print("Employee ID is in the database")
+                    # else:
+                    #     print("Employee ID is not in the database")
+            else:
+                # check if it is early than the start time
+                if (self.time < self.start):
+                    self.remarks = "Early"
+                    print(self.remarks)
+                    # check if the employee ID is in the database
+                    # if api.check_if_account_exists(self.inputID):
+                    #     print("Employee ID is in the database")
+                    # else:
+                    #     print("Employee ID is not in the database")
+                # check if its is after the end time
+                elif (self.time > self.end):
+                    self.remarks = "Late"
+                    print(self.remarks)
+                    # check if the employee ID is in the database
+                    # if api.check_if_account_exists(self.inputID):
+                    #     print("Employee ID is in the database")
+                    # else:
+                    #     print("Employee ID is not in the database")
+
 
 
         def checkClassSched():
