@@ -176,16 +176,36 @@ class App:
         self.timeDate.after(1000, self.TimeDate)  # time delay of 1000 milliseconds
 
     def ClassSched(self):
-        with open('ClassCodes.json') as json_file:
-            self.codes = json.load(json_file)
-            self.temp = list()
-            for i in self.codes:
-                self.temp.append(self.codes[i]['classCode'] + " , " +
-                                 self.codes[i]['altName'] + " , " +
-                                 self.codes[i]['classDays'] + " , " +
-                                 str(self.codes[i]['classStart']['hr']) + ":" + str(self.codes[i]['classStart']['min']) + " " + self.codes[i]['classStart']['p'])
+        # get the class schedule from api
+        self.class_schedule = api.get_all_schedule()
+        # print(self.class_schedule)
+        self.codes = self.class_schedule['data']
+        print(self.codes)
+        # display the offer_no in class_schedule
+        self.cBoxData = list()
+        for i in self.codes:
+            self.cBoxData.append(i['offer_no'] + ' , ' + 
+            i['subj_no'] + ' , ' +
+            i['subj_name'] + ' , ' +
+            i['sch_time'] + ' , ' 
+            )
+        # use the data to display in combobox
+        # for i in range(len(self.class_schedule)):
+        #     self.cBoxData.append(self.class_schedule[i]['offer_no'] + ' , ' +
+        #         self.class_schedule[i]['subj_no'] + ' , ' +
+        #         self.class_schedule[i]['subj_name'] + ' , ' +
+        #         self.class_schedule[i]['sch_time'] + ' , '
+        #     )
+        # with open('ClassCodes.json') as json_file:
+        #     self.codes = json.load(json_file)
+        #     self.temp = list()
+        #     for i in self.codes:
+        #         self.temp.append(self.codes[i]['classCode'] + " , " +
+        #                          self.codes[i]['altName'] + " , " +
+        #                          self.codes[i]['classDays'] + " , " +
+        #                          str(self.codes[i]['classStart']['hr']) + ":" + str(self.codes[i]['classStart']['min']) + " " + self.codes[i]['classStart']['p'])
 
-        return tuple(self.temp)
+        return tuple(self.cBoxData)
 
 
 class VideoCapture:

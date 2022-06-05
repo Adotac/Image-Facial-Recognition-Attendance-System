@@ -35,3 +35,8 @@ class API():
                 return False
         except:
             return False
+
+    def get_all_schedule(self):
+        response = requests.get(url=self.url + "/api/schedule/get/all")
+        data = response.json()
+        return data
