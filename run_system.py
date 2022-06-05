@@ -3,6 +3,7 @@
 ###
 
 ## The main program
+from datetime import datetime, datetime, timedelta
 import web_api
 import tkinter as tk
 from tkinter.ttk import Combobox
@@ -17,11 +18,13 @@ import screen_brightness_control as sbc
 import csv
 from Detector import Detector
 import numpy as np
+import time
 
 api = web_api.API()
 CamScaleW = 645
 CamScaleH = 810
 csvData = [{'x': 0, 'y': 0, 'w': 0, 'h': 0}]
+
 
 def get_rect_min():
     min = [999, 999, 999, 999]
@@ -40,6 +43,7 @@ def get_rect_min():
     print(min)
     return min
 
+
 def get_rect_max():
     max = [0, 0, 0, 0]
     with open('rectAvg.csv', 'r') as f:
@@ -54,14 +58,17 @@ def get_rect_max():
 
     return max
 
+
 rect_min = get_rect_min()
 rect_max = get_rect_max()
+
 
 class Flash_Window():
     def __init__(self):
         self.ww = tk.Toplevel()
         self.ww.attributes("-fullscreen", True)
         # self.ww.configure(bg='blue')
+
 
 class Notifcation_Window():
     def __init__(self, window, window_title, input_text):
@@ -73,12 +80,13 @@ class Notifcation_Window():
         self.text = tk.Label(window, text=input_text, font=('Montserrat', 10, 'regular'))
         self.text.place()
 
+
 class App:
 
     def __init__(self, window, window_title, video_source=0):
         self.window = window
         self.window.title(window_title)
-        self.window.geometry(str(CamScaleW)+"x"+ str(CamScaleH) +"+300+100")
+        self.window.geometry(str(CamScaleW) + "x" + str(CamScaleH) + "+300+100")
         self.window.resizable(width=False, height=False)
         self.video_source = video_source
         self.ok = False
@@ -95,20 +103,20 @@ class App:
 
         # A combo box to choose what class you're trying to check attendance to
         self.id_label = tk.Label(window, text='Class Schedule', font=('Montserrat', 12, 'bold'))
-        self.id_label.grid(row=2, column=0, columnspan=2, sticky='S' )
+        self.id_label.grid(row=2, column=0, columnspan=2, sticky='S')
         self.cBoxData = self.ClassSched()
         self.cb = Combobox(window, values=self.cBoxData)
         self.cb.grid(row=3, column=0, columnspan=2, ipadx=100, ipady=5, pady=15)
 
         # employee ID input
         self.id_label = tk.Label(window, text='Faculty ID', font=('Montserrat', 12, 'bold'))
-        self.id_label.grid(row=4, column=0, columnspan=2, sticky='S' )
+        self.id_label.grid(row=4, column=0, columnspan=2, sticky='S')
         self.eID = tk.Entry(window, bd=2)
         self.eID.grid(row=5, column=0, columnspan=2, ipadx=110, ipady=5, )
 
         # Button that lets the user take a snapshot
         self.attend = tk.Button(window, text="Log Attendance", fg='white', bg='#0034D1', command=self.CheckAttendance)
-        self.attend.grid(row=6, column=0, sticky='e', ipadx=75, ipady=5, pady=10, padx=5)
+        self.attend.grid(row=0, column=0, sticky='e', ipadx=75, ipady=5, pady=10, padx=5)
 
         # quit button
         self.btn_quit = tk.Button(window, text='Exit', fg='white', bg='#0034D1', command=quit)
@@ -130,19 +138,108 @@ class App:
             # get id input
             self.inputID = self.eID.get()
             print(self.inputID)
+            # get the time with 12hr format HH:MM AM/PM
+            self.time = time.strftime("%I:%M %p")
+            print(self.time)
+            
+            # get the date with day, month, year format
+            self.date = time.strftime("%d/%m/%Y")
+            print(self.date)
+
+            # get the class schedule from cbox
+            self.class_schedule = self.cb.get()
+            print(self.class_schedule)
+
+            # split the content in class_schedule
+            self.class_schedule = self.class_schedule.split(' , ')
+            print(self.class_schedule)
 
             sbc.set_brightness(curr_brightness)
             flash.ww.destroy()
+            print("ddd")
+            print(api.check_if_account_exists(self.inputID))  # test
+            self.remark = remarks()
+            
 
-            print(api.check_if_account_exists(id=1653206499))  # test
+
+
+
+        def remarks():
+            # get the index of sch_time in class_schedule
+            self.sch_time = self.class_schedule[3]
+            print(self.sch_time)
+
+            # split the sch_time by spaces
+            self.sch_time = self.sch_time.split(' - ')
+            print(self.sch_time)
+
+            self.start = self.sch_time[0]
+            print(self.start)
+
+            self.end = self.sch_time[1]
+            print(self.end)
+
+            # convert the start and end time to 24hr format
+            self.start = time.strptime(self.start, "%I:%M %p")
+            self.start = time.strftime("%H:%M", self.start)
+            print(self.start)
+
+            self.end = time.strptime(self.end, "%I:%M %p")
+            self.end = time.strftime("%H:%M", self.end)
+            print(self.end)
+
+            self.time = time.strptime(self.time, "%I:%M %p")
+            self.time = time.strftime("%H:%M", self.time)
+            print(self.time)
+            
+            # split the start and end time by :
+            self.startS = self.start.split(':')
+            print(self.startS)
+
+            self.endS = self.end.split(':')
+            print(self.endS)
+
+            # split the time by :
+            self.timeX = self.time.split(':')
+            print(self.timeX)
+
+            # convert the start and end time to int
+            self.startInts = [int(i) for i in self.startS]
+            print(self.startInts)
+
+            self.endInts = [int(i) for i in self.endS]
+            print(self.endInts)
+
+            # convert the time to int
+            self.timeS = [int(i) for i in self.timeX]
+            print(self.timeS)
+
+            self.add = self.startInts[1] + 15
+            print(self.add)
+
+            if self.timeS[0] == self.startInts[0]:
+                if self.timeS[1] >= self.startInts[1] and self.timeS[1] <= self.add:
+                    self.remark = "Present"
+                    print(self.remark)
+                    return self.remark
+                elif self.timeS[1] >= self.add:
+                    self.remark = "Late"
+                    print(self.remark)
+                    return self.remark
+            if self.timeS[0] > self.startInts[0]:
+                self.remark = "Absent"
+                print(self.remark)
+                return self.remark
+            if self.timeS[1] < self.startInts[0]:
+                self.remark = "Early"
+                print(self.remark)
+                return self.remark
 
         def checkClassSched():
             pass
 
-
         flash_thread = threading.Thread(target=flashbang)
         flash_thread.start()
-
 
     def update(self):
         # Get a frame from the video source
@@ -159,16 +256,36 @@ class App:
         self.timeDate.after(1000, self.TimeDate)  # time delay of 1000 milliseconds
 
     def ClassSched(self):
-        with open('ClassCodes.json') as json_file:
-            self.codes = json.load(json_file)
-            self.temp = list()
-            for i in self.codes:
-                self.temp.append(self.codes[i]['classCode'] + " " +
-                                 self.codes[i]['altName'] + " " +
-                                 self.codes[i]['classDays'] + " " +
-                                 str(self.codes[i]['classStart']['hr']) + ":" + str(self.codes[i]['classStart']['min']) + " " + self.codes[i]['classStart']['p'])
+        # get the class schedule from api
+        self.class_schedule = api.get_all_schedule()
+        # print(self.class_schedule)
+        self.codes = self.class_schedule['data']
+        print(self.codes)
+        # display the offer_no in class_schedule
+        self.cBoxData = list()
+        for i in self.codes:
+            self.cBoxData.append(i['offer_no'] + ' , ' + 
+            i['subj_no'] + ' , ' +
+            i['subj_name'] + ' , ' +
+            i['sch_time'] + ' , ' 
+            )
+        # use the data to display in combobox
+        # for i in range(len(self.class_schedule)):
+        #     self.cBoxData.append(self.class_schedule[i]['offer_no'] + ' , ' +
+        #         self.class_schedule[i]['subj_no'] + ' , ' +
+        #         self.class_schedule[i]['subj_name'] + ' , ' +
+        #         self.class_schedule[i]['sch_time'] + ' , '
+        #     )
+        # with open('ClassCodes.json') as json_file:
+        #     self.codes = json.load(json_file)
+        #     self.temp = list()
+        #     for i in self.codes:
+        #         self.temp.append(self.codes[i]['classCode'] + " , " +
+        #                          self.codes[i]['altName'] + " , " +
+        #                          self.codes[i]['classDays'] + " , " +
+        #                          str(self.codes[i]['classStart']['hr']) + ":" + str(self.codes[i]['classStart']['min']) + " " + self.codes[i]['classStart']['p'])
 
-        return tuple(self.temp)
+        return tuple(self.cBoxData)
 
 
 class VideoCapture:
@@ -206,7 +323,7 @@ class VideoCapture:
             writer.writeheader()
             writer.writerows(data)
 
-# added by Montero, Joshua & Gadianne, James & Bohol, Christopher
+    # added by Montero, Joshua & Gadianne, James & Bohol, Christopher
     def obj_detection(self, frame):
         classLabelIDs, confidence, bboxes = self.obj_detector.net.detect(frame, confThreshold=0.4)
         bboxes = list(bboxes)
@@ -225,14 +342,14 @@ class VideoCapture:
 
                 objText = "{}:{:.4f}".format(classesLabel, classConfidence)
 
-                x,y,w,h = bbox
-                cv2.rectangle(frame, (x, y), (x+w, y+h), color=classColor, thickness=2)
-                cv2.putText(frame, objText, (x, y-10), cv2.FONT_HERSHEY_PLAIN, 1, classColor, 2)
+                x, y, w, h = bbox
+                cv2.rectangle(frame, (x, y), (x + w, y + h), color=classColor, thickness=2)
+                cv2.putText(frame, objText, (x, y - 10), cv2.FONT_HERSHEY_PLAIN, 1, classColor, 2)
 
-# added by Bohol, Christopher
+    # added by Bohol, Christopher
     def edge_detection(self, frame):
 
-        def appendRect(_x,_y,_w,_h):
+        def appendRect(_x, _y, _w, _h):
             csvData.append({'x': _x, 'y': _y, 'w': _w, 'h': _h})
 
         path = "cascades\\data\\haarcascade_frontalface_alt_tree.xml"
@@ -250,24 +367,25 @@ class VideoCapture:
         YCbCr_cv = cv2.cvtColor(frame, cv2.COLOR_RGB2YCrCb)
         LUV_cv = cv2.cvtColor(frame, cv2.COLOR_RGB2LUV)
 
-        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) #converting frame to grayscale
+        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # converting frame to grayscale
         HSV_cv = cv2.cvtColor(HSV_cv, cv2.COLOR_BGR2GRAY)
         YCbCr_cv = cv2.cvtColor(YCbCr_cv, cv2.COLOR_BGR2GRAY)
         LUV_cv = cv2.cvtColor(LUV_cv, cv2.COLOR_BGR2GRAY)
 
-        faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5) #detecting faces in the frame
+        faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1,
+                                              minNeighbors=5)  # detecting faces in the frame
         # edges = cv2.Canny(gray_frame, 100, 200) #generating edge map using Canny Edge Detector
 
         font = cv2.FONT_HERSHEY_SIMPLEX
         fScale = (CamScaleW * CamScaleH) / (900 * 900)
         stroke = 2
-        for(x,y,w,h) in faces:
+        for (x, y, w, h) in faces:
             point = (x, y)
-            print(x,y,w,h)
+            print(x, y, w, h)
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), stroke)
             # roi_gray = gray_frame[y:y+h, x:x+w] #cropping the face
-            HSV_frame = HSV_cv[y:y+h, x:x+w]
-            YCbCr_frame = YCbCr_cv[y:y+h, x:x+w]
+            HSV_frame = HSV_cv[y:y + h, x:x + w]
+            YCbCr_frame = YCbCr_cv[y:y + h, x:x + w]
             # LUV_frame = LUV_cv[y:y+h, x:x+w]
 
             # id_1, conf1 = recognizer.predict(roi_gray)
@@ -326,14 +444,11 @@ class VideoCapture:
             # cv2.imshow('LUV', LUV_frame)
             # cv2.imshow('result', edges) #displaying result (args: Name, Image to show)
 
-
     # Release the video source when the object is destroyed
     def __del__(self):
         if self.vid.isOpened():
             self.vid.release()
             cv2.destroyAllWindows()
-
-
 
 
 def main():
