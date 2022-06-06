@@ -136,8 +136,8 @@ class App:
             time.sleep(0.2)
 
             # get id input
-            self.inputID = self.eID.get()
-            print(self.inputID)
+            inputID = self.eID.get()
+            print(inputID)
             # get the time with 12hr format HH:MM AM/PM
             _time = time.strftime("%I:%M %p")
             print("Time: ")
@@ -147,9 +147,15 @@ class App:
             sbc.set_brightness(curr_brightness)
             flash.ww.destroy()
             print("ddd")
-            print(api.check_if_account_exists(self.inputID))  # test
-            self.remark = remarks(sched_index)
-            # print(self.remark)
+            print(api.check_if_account_exists(inputID))  # test
+            if api.check_if_account_exists(inputID):
+                print("ID exists!")
+                remark = remarks(sched_index)
+                addAttendance(remark, sched_index, inputID)
+
+            else:
+                print("ID doesn't exist!")
+                return
 
         # Created by Bohol, Christopher
         # Modification by: Montero, Joshua
@@ -219,6 +225,29 @@ class App:
                     remark = "Late"
                     print(remark)
                     return remark
+            else:
+                remark = "Absent"
+                print(remark)
+                return remark
+
+        def addAttendance(remark, index, id):
+            selectedCode = self.codes[index]
+            data = {
+                'remarks': remark,
+                'classcode': int(selectedCode['offer_no']),
+                'date': strftime('%d/%m/%Y'),
+                'time': strftime('%I:%M %p'),
+                'employeeID': int(id)
+            }
+            print(data)
+            response = api.add_attendance(body=data)
+            print(response.json())
+            # try:
+            #     if response['success']:
+            #         print("adding attendance success!!")
+            # except:
+            #     print("adding attendance failed")
+            #     print("API Error!")
 
         flash_thread = threading.Thread(target=flashbang)
         flash_thread.start()
