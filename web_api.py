@@ -24,10 +24,10 @@ class API():
 
     def check_if_account_exists(self, id):
         response = self.get_account(str(id))
-        print(response)
+        # print(response)
         data = response.json()
-        print(type(data))
-        print(data)
+        # print(type(data))
+        # print(data)
         try:
             if data['success']:
                 return True

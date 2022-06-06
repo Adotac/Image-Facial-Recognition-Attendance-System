@@ -105,7 +105,7 @@ class App:
         self.id_label = tk.Label(window, text='Class Schedule', font=('Montserrat', 12, 'bold'))
         self.id_label.grid(row=2, column=0, columnspan=2, sticky='S')
         self.cBoxData = self.ClassSched()
-        self.cb = Combobox(window, values=self.cBoxData)
+        self.cb = Combobox(window, values=self.cBoxData, state='readonly')
         self.cb.grid(row=3, column=0, columnspan=2, ipadx=100, ipady=5, pady=15)
 
         # employee ID input
@@ -116,7 +116,7 @@ class App:
 
         # Button that lets the user take a snapshot
         self.attend = tk.Button(window, text="Log Attendance", fg='white', bg='#0034D1', command=self.CheckAttendance)
-        self.attend.grid(row=0, column=0, sticky='e', ipadx=75, ipady=5, pady=10, padx=5)
+        self.attend.grid(row=6, column=0, sticky='e', ipadx=75, ipady=5, pady=10, padx=5)
 
         # quit button
         self.btn_quit = tk.Button(window, text='Exit', fg='white', bg='#0034D1', command=quit)
@@ -139,104 +139,86 @@ class App:
             self.inputID = self.eID.get()
             print(self.inputID)
             # get the time with 12hr format HH:MM AM/PM
-            self.time = time.strftime("%I:%M %p")
-            print(self.time)
-            
-            # get the date with day, month, year format
-            self.date = time.strftime("%d/%m/%Y")
-            print(self.date)
-
+            _time = time.strftime("%I:%M %p")
+            print("Time: ")
+            print(_time)
             # get the class schedule from cbox
-            self.class_schedule = self.cb.get()
-            print(self.class_schedule)
-
-            # split the content in class_schedule
-            self.class_schedule = self.class_schedule.split(' , ')
-            print(self.class_schedule)
-
+            sched_index = self.cb.current()
             sbc.set_brightness(curr_brightness)
             flash.ww.destroy()
             print("ddd")
             print(api.check_if_account_exists(self.inputID))  # test
-            self.remark = remarks()
-            
+            self.remark = remarks(sched_index)
+            # print(self.remark)
 
-
-
-
-        def remarks():
+        # Created by Bohol, Christopher
+        # Modification by: Montero, Joshua
+        def remarks(index):
             # get the index of sch_time in class_schedule
-            self.sch_time = self.class_schedule[3]
-            print(self.sch_time)
-
+            selectedCode = self.codes[index]
             # split the sch_time by spaces
-            self.sch_time = self.sch_time.split(' - ')
-            print(self.sch_time)
+            sch_time = selectedCode['sch_time'].split(' - ')
 
-            self.start = self.sch_time[0]
-            print(self.start)
-
-            self.end = self.sch_time[1]
-            print(self.end)
+            start = sch_time[0]
+            print(start)
+            end = sch_time[1]
+            print(end)
 
             # convert the start and end time to 24hr format
-            self.start = time.strptime(self.start, "%I:%M %p")
-            self.start = time.strftime("%H:%M", self.start)
-            print(self.start)
+            start = time.strptime(start, "%I:%M %p")
+            start = time.strftime("%H:%M", start)
+            print(start)
 
-            self.end = time.strptime(self.end, "%I:%M %p")
-            self.end = time.strftime("%H:%M", self.end)
-            print(self.end)
+            end = time.strptime(end, "%I:%M %p")
+            end = time.strftime("%H:%M", end)
+            print(end)
 
-            self.time = time.strptime(self.time, "%I:%M %p")
-            self.time = time.strftime("%H:%M", self.time)
-            print(self.time)
+            _time = time.strftime("%H:%M")
+            # print(_time)
             
             # split the start and end time by :
-            self.startS = self.start.split(':')
-            print(self.startS)
+            startS = start.split(':')
+            # print(startS)
 
-            self.endS = self.end.split(':')
-            print(self.endS)
+            endS = end.split(':')
+            # print(endS)
 
             # split the time by :
-            self.timeX = self.time.split(':')
-            print(self.timeX)
+            timeX = _time.split(':')
+            # print(timeX)
 
             # convert the start and end time to int
-            self.startInts = [int(i) for i in self.startS]
-            print(self.startInts)
+            startInts = [int(i) for i in startS]
+            print(startInts)
 
-            self.endInts = [int(i) for i in self.endS]
-            print(self.endInts)
+            endInts = [int(i) for i in endS]
+            print(endInts)
 
             # convert the time to int
-            self.timeS = [int(i) for i in self.timeX]
-            print(self.timeS)
+            timeS = [int(i) for i in timeX]
+            print(timeS)
 
-            self.add = self.startInts[1] + 15
-            print(self.add)
+            add = startInts[1] + 15  # 15 minutes late
+            print(add)
 
-            if self.timeS[0] == self.startInts[0]:
-                if self.timeS[1] >= self.startInts[1] and self.timeS[1] <= self.add:
-                    self.remark = "Present"
-                    print(self.remark)
-                    return self.remark
-                elif self.timeS[1] >= self.add:
-                    self.remark = "Late"
-                    print(self.remark)
-                    return self.remark
-            if self.timeS[0] > self.startInts[0]:
-                self.remark = "Absent"
-                print(self.remark)
-                return self.remark
-            if self.timeS[1] < self.startInts[0]:
-                self.remark = "Early"
-                print(self.remark)
-                return self.remark
 
-        def checkClassSched():
-            pass
+            if (timeS[0] > startInts[0]) and (timeS[1] >= endInts[1]):
+                remark = "Absent"
+                print(remark)
+                return remark
+            if timeS[0] < startInts[0]:
+                remark = "Early"
+                print(remark)
+                return remark
+            if timeS[0] == startInts[0]:
+                if (timeS[1] >= startInts[1]) and (timeS[1] <= add):
+                    remark = "Present"
+                    print(remark)
+                    return remark
+                elif timeS[1] >= add:
+                    remark = "Late"
+                    print(remark)
+                    return remark
 
         flash_thread = threading.Thread(target=flashbang)
         flash_thread.start()
@@ -251,41 +233,26 @@ class App:
         self.window.after(self.delay, self.update)
 
     def TimeDate(self):
-        time_string = strftime('%H:%M:%S %p \n %A, %x')  # time format
+        time_string = strftime('%I:%M:%S %p\n%A, %x')  # time format
         self.timeDate.config(text=time_string)
         self.timeDate.after(1000, self.TimeDate)  # time delay of 1000 milliseconds
 
+    # Modified by Bohol, Cristopher
     def ClassSched(self):
         # get the class schedule from api
         self.class_schedule = api.get_all_schedule()
         # print(self.class_schedule)
         self.codes = self.class_schedule['data']
-        print(self.codes)
+        # print(self.codes)
         # display the offer_no in class_schedule
-        self.cBoxData = list()
+        self.cBoxDataList = list()
         for i in self.codes:
-            self.cBoxData.append(i['offer_no'] + ' , ' + 
-            i['subj_no'] + ' , ' +
-            i['subj_name'] + ' , ' +
-            i['sch_time'] + ' , ' 
+            self.cBoxDataList.append(i['offer_no'] + ' - ' +
+            i['subj_no'] + ' | ( ' +
+            i['sch_time'] + ' ) | ' +
+            i['subj_name']
             )
-        # use the data to display in combobox
-        # for i in range(len(self.class_schedule)):
-        #     self.cBoxData.append(self.class_schedule[i]['offer_no'] + ' , ' +
-        #         self.class_schedule[i]['subj_no'] + ' , ' +
-        #         self.class_schedule[i]['subj_name'] + ' , ' +
-        #         self.class_schedule[i]['sch_time'] + ' , '
-        #     )
-        # with open('ClassCodes.json') as json_file:
-        #     self.codes = json.load(json_file)
-        #     self.temp = list()
-        #     for i in self.codes:
-        #         self.temp.append(self.codes[i]['classCode'] + " , " +
-        #                          self.codes[i]['altName'] + " , " +
-        #                          self.codes[i]['classDays'] + " , " +
-        #                          str(self.codes[i]['classStart']['hr']) + ":" + str(self.codes[i]['classStart']['min']) + " " + self.codes[i]['classStart']['p'])
-
-        return tuple(self.cBoxData)
+        return tuple(self.cBoxDataList)
 
 
 class VideoCapture:
@@ -393,8 +360,8 @@ class VideoCapture:
             id_3, conf3 = recognizer.predict(YCbCr_frame)
             # id_4, conf4 = recognizer.predict(LUV_frame)
 
-            if (rect_min[0] < x and rect_min[1] < y and rect_min[2] < w and rect_min[3] < h) and \
-                    (rect_max[0] > x and rect_max[1] > y and rect_max[2] > w and rect_max[3] > h):
+            if not (rect_min[0] < x and rect_min[1] < y and rect_min[2] < w and rect_min[3] < h) and \
+                   not (rect_max[0] > x and rect_max[1] > y and rect_max[2] > w and rect_max[3] > h):
 
                 # if conf4 >= 65 and conf4 <= 70:
                 #     print("LUV!!")
