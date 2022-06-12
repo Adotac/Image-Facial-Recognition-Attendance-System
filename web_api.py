@@ -36,6 +36,22 @@ class API():
         except:
             return False
 
+    def crosscheck_face_name_to_db(self, id, username):
+        response = self.get_account(str(id))
+        data = response.json()
+        print(data['data']['name'])
+        tempName = data['data']['name'].split()
+        tempName = '-'.join(tempName).lower()
+        print(tempName)
+        try:
+            if tempName == username:
+                return True
+            else:
+                return False
+        except:
+            return False
+
+
     def get_all_schedule(self):
         response = requests.get(url=self.url + "/api/schedule/get/all")
         data = response.json()

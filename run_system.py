@@ -3,65 +3,28 @@
 ###
 
 ## The main program
-from datetime import datetime, datetime, timedelta
 import web_api
 import tkinter as tk
 from tkinter.ttk import Combobox
+from tkinter import messagebox
+
 from time import strftime
 import cv2
 import PIL.Image, PIL.ImageTk
-import json
 import pickle
-import time
+
 import threading
 import screen_brightness_control as sbc
 import csv
 from Detector import Detector
 import numpy as np
+
+from time import time
 import time
 
 api = web_api.API()
 CamScaleW = 645
 CamScaleH = 810
-csvData = [{'x': 0, 'y': 0, 'w': 0, 'h': 0}]
-
-
-def get_rect_min():
-    min = [999, 999, 999, 999]
-    with open('rectAvg.csv', 'r') as f:
-        reader = csv.reader(f, skipinitialspace=True, delimiter=',')
-        next(reader, None)  # skip the headers
-        next(reader, None)  # skip the init values
-        for row in reader:
-            # print(row)
-            if (int(row[0]) < min[0]) and \
-                    (int(row[1]) < min[1]) and \
-                    (int(row[2]) < min[2]) and \
-                    (int(row[3]) < min[3]):
-                min = [int(row[0]), int(row[1]), int(row[2]), int(row[3])]
-
-    print(min)
-    return min
-
-
-def get_rect_max():
-    max = [0, 0, 0, 0]
-    with open('rectAvg.csv', 'r') as f:
-        reader = csv.reader(f, skipinitialspace=True, delimiter=',')
-        next(reader, None)  # skip the headers
-        for row in reader:
-            if (int(row[0]) > max[0]) and \
-                    (int(row[1]) > max[1]) and \
-                    (int(row[2]) > max[2]) and \
-                    (int(row[3]) > max[3]):
-                max = [int(row[0]), int(row[1]), int(row[2]), int(row[3])]
-
-    return max
-
-
-rect_min = get_rect_min()
-rect_max = get_rect_max()
-
 
 class Flash_Window():
     def __init__(self):
@@ -71,19 +34,28 @@ class Flash_Window():
 
 
 class Notifcation_Window():
-    def __init__(self, window, window_title, input_text):
-        self.ww = window
-        self.ww.title(window_title)
-        self.ww.geometry("200x200+300+100")
-        self.ww.resizable(width=False, height=False)
+    def __init__(self, window,  window_title, input_text):
+        # self.ww = tk.Tk()
 
-        self.text = tk.Label(window, text=input_text, font=('Montserrat', 10, 'regular'))
-        self.text.place()
+        self.ww = window
+        self.ww.geometry("200x200+300+100")
+        # self.ww.resizable(width=False, height=False)
+
+        self.text = tk.Label(self.ww, text=input_text, font=('Montserrat', 10, 'regular'))
+        self.text.pack()
+
+        messagebox.showerror("showerror", "Error")
 
 
 class App:
 
     def __init__(self, window, window_title, video_source=0):
+        def updateLbl(*_):
+            if self.eID.get():  # empty string is false
+                self.attend["state"] = "normal"
+            else:
+                self.attend["state"] = "disable"
+
         self.window = window
         self.window.title(window_title)
         self.window.geometry(str(CamScaleW) + "x" + str(CamScaleH) + "+300+100")
@@ -92,7 +64,8 @@ class App:
         self.ok = False
 
         # open video source (by default this will try to open the computer webcam)
-        self.vid = VideoCapture(self.video_source)
+        self.vid = VideoCapture(self.video_source).start()
+        time.sleep(1.0)
         # Create a canvas that can fit the above video source size
         self.canvas = tk.Canvas(window, width=640, height=480)
         self.canvas.grid(row=0, column=0, columnspan=2)
@@ -112,10 +85,13 @@ class App:
         self.id_label = tk.Label(window, text='Faculty ID', font=('Montserrat', 12, 'bold'))
         self.id_label.grid(row=4, column=0, columnspan=2, sticky='S')
         self.eID = tk.Entry(window, bd=2)
+        self.eID.var  = tk.StringVar()
+        self.eID['textvariable'] = self.eID.var
+        self.eID.var.trace_add('write', updateLbl)
         self.eID.grid(row=5, column=0, columnspan=2, ipadx=110, ipady=5, )
 
         # Button that lets the user take a snapshot
-        self.attend = tk.Button(window, text="Log Attendance", fg='white', bg='#0034D1', command=self.CheckAttendance)
+        self.attend = tk.Button(window, text="Log Attendance", state='disabled', fg='white', bg='#0034D1', command=self.CheckAttendance)
         self.attend.grid(row=6, column=0, sticky='e', ipadx=75, ipady=5, pady=10, padx=5)
 
         # quit button
@@ -129,32 +105,30 @@ class App:
 
     # function to be called that checks the empID input when attendance button is clicked
     def CheckAttendance(self):
-        def flashbang():
-            curr_brightness = 60
-            flash = Flash_Window()
-            sbc.set_brightness(100)
-            time.sleep(0.2)
-
+        def processAttendance():
             # get id input
             inputID = self.eID.get()
             print(inputID)
-            # get the time with 12hr format HH:MM AM/PM
-            _time = time.strftime("%I:%M %p")
-            print("Time: ")
-            print(_time)
-            # get the class schedule from cbox
-            sched_index = self.cb.current()
-            sbc.set_brightness(curr_brightness)
-            flash.ww.destroy()
-            print("ddd")
-            print(api.check_if_account_exists(inputID))  # test
+
             if api.check_if_account_exists(inputID):
-                print("ID exists!")
-                remark = remarks(sched_index)
-                addAttendance(remark, sched_index, inputID)
+                print("from face detection -- " + self.vid.name)
+                if api.crosscheck_face_name_to_db(inputID, self.vid.name):
+                    # get the time with 12hr format HH:MM AM/PM
+                    _time = time.strftime("%I:%M %p")
+                    print("Time: ")
+                    print(_time)
+                    # get the class schedule from cbox
+                    sched_index = self.cb.current()
+
+                    print("ID exists!")
+                    remark = remarks(sched_index)
+                    addAttendance(remark, sched_index, inputID)
+                else:
+                    messagebox.showerror("ERROR!", "Faculty ID and Face entry doesn't match!")
 
             else:
-                print("ID doesn't exist!")
+                messagebox.showerror("ERROR!", "Invalid Faculty ID")
+                print("Cannot recognize ID input")
                 return
 
         # Created by Bohol, Christopher
@@ -249,16 +223,27 @@ class App:
             #     print("adding attendance failed")
             #     print("API Error!")
 
-        flash_thread = threading.Thread(target=flashbang)
-        flash_thread.start()
+        proc_thread = threading.Thread(target=processAttendance)
+        proc_thread.start()
 
     def update(self):
+        start_time = time.time()
+
         # Get a frame from the video source
         ret, frame = self.vid.get_frame()
+
+        end_time = time.time()
+        fps = 1 / np.round(end_time - start_time, 2)
+        # print(f"Frames Per Second : {fps}")
+        formatFps = "{:.2f}".format(fps)
+        cv2.putText(frame, f'FPS: ' + formatFps, (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
         if ret:
             self.photo = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(frame))
             self.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
+
+
+
         self.window.after(self.delay, self.update)
 
     def TimeDate(self):
@@ -285,7 +270,7 @@ class App:
 
 
 class VideoCapture:
-    def __init__(self, video_source=0):
+    def __init__(self, video_source=0, qSize=128):
         # Open the video source
         self.source = video_source
         self.obj_detector = Detector(videopath=self.source)
@@ -293,12 +278,20 @@ class VideoCapture:
         if not self.vid.isOpened():
             raise ValueError("Unable to open video source", video_source)
 
+    def start(self):
+        t = threading.Thread(target=self.get_frame, args=())
+        t.daemon = True
+        t.start()
+        return self
+
     # To get frames
     def get_frame(self):
         if self.vid.isOpened():
 
             ret, fr = self.vid.read()
+            assert ret
             if ret:
+                # threading.Thread(target=self.edge_detection, kwargs={'frame': fr}).start()
                 self.edge_detection(frame=fr)
                 self.obj_detection(frame=fr)
                 # self.rectAvg_to_csv(data=csvData)  # Enable only if you want to get the average again
@@ -321,32 +314,17 @@ class VideoCapture:
 
     # added by Montero, Joshua & Gadianne, James & Bohol, Christopher
     def obj_detection(self, frame):
-        classLabelIDs, confidence, bboxes = self.obj_detector.net.detect(frame, confThreshold=0.4)
-        bboxes = list(bboxes)
-        confidence = list(np.array(confidence).reshape(1, -1)[0])
-        confidence = list(map(float, confidence))
-
-        bboxIdx = cv2.dnn.NMSBoxes(bboxes, confidence, score_threshold=0.5, nms_threshold=0.2)
-
-        if len(bboxIdx) != 0:
-            for i in range(0, len(bboxIdx)):
-                bbox = bboxes[np.squeeze(bboxIdx[i])]
-                classConfidence = confidence[np.squeeze(bboxIdx[i])]
-                classLabelID = np.squeeze(classLabelIDs[[np.squeeze(bboxIdx[i])]])
-                classesLabel = self.obj_detector.classesList[classLabelID]
-                classColor = [int(c) for c in self.obj_detector.colorList[classLabelID]]
-
-                objText = "{}:{:.4f}".format(classesLabel, classConfidence)
-
-                x, y, w, h = bbox
-                cv2.rectangle(frame, (x, y), (x + w, y + h), color=classColor, thickness=2)
-                cv2.putText(frame, objText, (x, y - 10), cv2.FONT_HERSHEY_PLAIN, 1, classColor, 2)
+        # start_time = time.time()
+        results = self.obj_detector.score_frame(frame)
+        self.obj_detector.plot_boxes(results, frame)
+        # end_time = time.time()
+        # fps = 1 / np.round(end_time - start_time, 2)
+        # # print(f"Frames Per Second : {fps}")
+        # formatFps = "{:.2f}".format(fps)
+        # cv2.putText(frame, f'FPS: ' + formatFps, (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
 
     # added by Bohol, Christopher
     def edge_detection(self, frame):
-
-        def appendRect(_x, _y, _w, _h):
-            csvData.append({'x': _x, 'y': _y, 'w': _w, 'h': _h})
 
         path = "cascades\\data\\haarcascade_frontalface_alt_tree.xml"
         face_cascade = cv2.CascadeClassifier(path)
@@ -361,12 +339,10 @@ class VideoCapture:
 
         HSV_cv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
         YCbCr_cv = cv2.cvtColor(frame, cv2.COLOR_RGB2YCrCb)
-        LUV_cv = cv2.cvtColor(frame, cv2.COLOR_RGB2LUV)
 
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # converting frame to grayscale
         HSV_cv = cv2.cvtColor(HSV_cv, cv2.COLOR_BGR2GRAY)
         YCbCr_cv = cv2.cvtColor(YCbCr_cv, cv2.COLOR_BGR2GRAY)
-        LUV_cv = cv2.cvtColor(LUV_cv, cv2.COLOR_BGR2GRAY)
 
         faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1,
                                               minNeighbors=5)  # detecting faces in the frame
@@ -378,67 +354,46 @@ class VideoCapture:
         for (x, y, w, h) in faces:
             point = (x, y)
             print(x, y, w, h)
+
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), stroke)
             # roi_gray = gray_frame[y:y+h, x:x+w] #cropping the face
             HSV_frame = HSV_cv[y:y + h, x:x + w]
             YCbCr_frame = YCbCr_cv[y:y + h, x:x + w]
             # LUV_frame = LUV_cv[y:y+h, x:x+w]
 
-            # id_1, conf1 = recognizer.predict(roi_gray)
             id_2, conf2 = recognizer.predict(HSV_frame)
             id_3, conf3 = recognizer.predict(YCbCr_frame)
-            # id_4, conf4 = recognizer.predict(LUV_frame)
 
-            if not (rect_min[0] < x and rect_min[1] < y and rect_min[2] < w and rect_min[3] < h) and \
-                   not (rect_max[0] > x and rect_max[1] > y and rect_max[2] > w and rect_max[3] > h):
-
-                # if conf4 >= 65 and conf4 <= 70:
-                #     print("LUV!!")
-                #     # print(labels[id_])
-                #     # appendRect(x,y,w,h)
-                #     self.name = labels[id_4]
-                #     color = (255, 255, 255)
-                #     cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
-                #     continue
-
-                if conf2 >= 50 and conf2 <= 80:
-                    print("HSV!!")
-                    # appendRect(x, y, w, h)
+            if conf2 >= 50 and conf2 <= 80:
+                # print("HSV!!")
+                # appendRect(x, y, w, h)
+                if (y < 100 or w < 210) and (x >= 230 or w >= 255):
+                    self.name = "Position head properly"
+                    color = (128, 0, 128)
+                    cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
+                    cv2.rectangle(frame, point, (x + w, y + h), color, stroke)
+                else:
                     self.name = labels[id_2]
                     color = (255, 255, 255)
                     cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
-                    continue
-                if conf3 >= 65 and conf3 <= 80:
-                    print("YCbCr!!")
-                    # appendRect(x, y, w, h)
-                    self.name = "False"
-                    color = (0, 0, 255)
-                    cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
-                    cv2.rectangle(frame, point, (x + w, y + h), color, stroke)
-                    # continue
-                # if conf1 >= 75 and conf1 <= 80:
-                #     print("grayscale!!!!")
-                #     # appendRect(x,y,w,h)
-                #     self.name = labels[id_1]
-                #     color = (255, 255, 255)
-                #     cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
-                else:
-                    name = "False"
-                    color = (0, 0, 255)
-                    cv2.putText(frame, name, point, font, fScale, color, stroke, cv2.LINE_AA)
-                    cv2.rectangle(frame, point, (x + w, y + h), color, stroke)
-                # drawing rectangle around the face
+
+                # color = (255, 255, 255)
+                # cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
+                continue
+            if conf3 >= 60 and conf3 <= 80:
+                # print("YCbCr!!")
+                # appendRect(x, y, w, h)
+                self.name = "False"
+                color = (0, 0, 255)
+                cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
+                cv2.rectangle(frame, point, (x + w, y + h), color, stroke)
+                # continue
             else:
-                name = "Position face properly..."
-                color = (255, 0, 255)
+                name = "False"
+                color = (0, 0, 255)
                 cv2.putText(frame, name, point, font, fScale, color, stroke, cv2.LINE_AA)
                 cv2.rectangle(frame, point, (x + w, y + h), color, stroke)
-
-            # cv2.imshow('gray', roi_gray)
-            cv2.imshow('HSV', HSV_frame)
-            cv2.imshow('YCC', YCbCr_frame)
-            # cv2.imshow('LUV', LUV_frame)
-            # cv2.imshow('result', edges) #displaying result (args: Name, Image to show)
+            # drawing rectangle around the face
 
     # Release the video source when the object is destroyed
     def __del__(self):
@@ -453,5 +408,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main_th = threading.Thread(target=main)
-    main_th.start()
+    main()
+
+    # main_th = threading.Thread(target=main)
+    # main_th.start()
