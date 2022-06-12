@@ -2,6 +2,7 @@
 /venv
 /database
 /__pycache__
+/obj_documents
 /treeClass
 *.avi
 *.jpg
@@ -10,3 +11,4 @@
 *.zip
 *.rar
 *.env
+deployYoloModel.py
