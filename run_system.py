@@ -110,26 +110,28 @@ class App:
             inputID = self.eID.get()
             print(inputID)
 
-            if api.check_if_account_exists(inputID):
-                print("from face detection -- " + self.vid.name)
-                if api.crosscheck_face_name_to_db(inputID, self.vid.name):
-                    # get the time with 12hr format HH:MM AM/PM
-                    _time = time.strftime("%I:%M %p")
-                    print("Time: ")
-                    print(_time)
-                    # get the class schedule from cbox
-                    sched_index = self.cb.current()
+            if not self.vid.pf:
+                if api.check_if_account_exists(inputID):
+                    print("from face detection -- " + self.vid.name)
+                    if api.crosscheck_face_name_to_db(inputID, self.vid.name):
+                        # get the time with 12hr format HH:MM AM/PM
+                        _time = time.strftime("%I:%M %p")
+                        print("Time: ")
+                        print(_time)
+                        # get the class schedule from cbox
+                        sched_index = self.cb.current()
 
-                    print("ID exists!")
-                    remark = remarks(sched_index)
-                    addAttendance(remark, sched_index, inputID)
+                        print("ID exists!")
+                        remark = remarks(sched_index)
+                        addAttendance(remark, sched_index, inputID)
+                    else:
+                        messagebox.showerror("ERROR!", "Faculty ID and Face entry doesn't match!")
                 else:
-                    messagebox.showerror("ERROR!", "Faculty ID and Face entry doesn't match!")
-
+                    messagebox.showerror("ERROR!", "Invalid Faculty ID")
+                    print("Cannot recognize ID input")
             else:
-                messagebox.showerror("ERROR!", "Invalid Faculty ID")
-                print("Cannot recognize ID input")
-                return
+                messagebox.showerror("Anti-Spoofing ERROR!", "Spoofing detected!")
+            return
 
         # Created by Bohol, Christopher
         # Modification by: Montero, Joshua
@@ -242,7 +244,7 @@ class App:
             self.photo = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(frame))
             self.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
 
-
+        # print(self.vid.pf)
 
         self.window.after(self.delay, self.update)
 
@@ -316,7 +318,7 @@ class VideoCapture:
     def obj_detection(self, frame):
         # start_time = time.time()
         results = self.obj_detector.score_frame(frame)
-        self.obj_detector.plot_boxes(results, frame)
+        f, self.pf = self.obj_detector.plot_boxes(results, frame)
         # end_time = time.time()
         # fps = 1 / np.round(end_time - start_time, 2)
         # # print(f"Frames Per Second : {fps}")
@@ -367,7 +369,7 @@ class VideoCapture:
             if conf2 >= 50 and conf2 <= 80:
                 # print("HSV!!")
                 # appendRect(x, y, w, h)
-                if (y < 100 or w < 210) and (x >= 230 or w >= 255):
+                if (y < 100 or w < 210) or (x >= 230 or w >= 259):
                     self.name = "Position head properly"
                     color = (128, 0, 128)
                     cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)

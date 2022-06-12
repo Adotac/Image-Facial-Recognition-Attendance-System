@@ -4,6 +4,8 @@
 /__pycache__
 /obj_documents
 /treeClass
+/build
+/dist
 *.avi
 *.jpg
 *.png
@@ -11,4 +13,5 @@
 *.zip
 *.rar
 *.env
+*.spec
 deployYoloModel.py

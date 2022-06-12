@@ -6,8 +6,8 @@ load_dotenv()
 
 class API():
     def __init__(self):
-        #  self.url = str(os.getenv('LOCAL_API'))  # Local URL
-        self.url = "http://localhost:5000/facial-recognition-syste-c82ae/us-central1"  # Local URL
+         self.url = str(os.getenv('DEPLOYED_API'))  # Deployed URL
+        # self.url = "http://localhost:5000/facial-recognition-syste-c82ae/us-central1"  # Local URL
 
     def get_account(self, id):
         return requests.get(url=self.url + "/api/accounts/get/" + str(id))
