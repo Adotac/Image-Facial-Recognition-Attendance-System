@@ -1,12 +1,11 @@
 import requests
-import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class API():
     def __init__(self):
-         self.url = str(os.getenv('DEPLOYED_API'))  # Deployed URL
+         self.url = "https://us-central1-facial-recognition-syste-c82ae.cloudfunctions.net/"   # Deployed URL
         # self.url = "http://localhost:5000/facial-recognition-syste-c82ae/us-central1"  # Local URL
 
     def get_account(self, id):

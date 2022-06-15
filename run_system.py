@@ -14,7 +14,6 @@ import PIL.Image, PIL.ImageTk
 import pickle
 
 import threading
-import screen_brightness_control as sbc
 import csv
 from Detector import Detector
 import numpy as np
@@ -25,27 +24,6 @@ import time
 api = web_api.API()
 CamScaleW = 645
 CamScaleH = 810
-
-class Flash_Window():
-    def __init__(self):
-        self.ww = tk.Toplevel()
-        self.ww.attributes("-fullscreen", True)
-        # self.ww.configure(bg='blue')
-
-
-class Notifcation_Window():
-    def __init__(self, window,  window_title, input_text):
-        # self.ww = tk.Tk()
-
-        self.ww = window
-        self.ww.geometry("200x200+300+100")
-        # self.ww.resizable(width=False, height=False)
-
-        self.text = tk.Label(self.ww, text=input_text, font=('Montserrat', 10, 'regular'))
-        self.text.pack()
-
-        messagebox.showerror("showerror", "Error")
-
 
 class App:
 
@@ -58,8 +36,8 @@ class App:
 
         self.window = window
         self.window.title(window_title)
-        self.window.geometry(str(CamScaleW) + "x" + str(CamScaleH) + "+300+100")
-        self.window.resizable(width=False, height=False)
+        self.window.geometry(str(CamScaleW) + "x" + str(CamScaleH))
+        self.window.resizable(width=False, height=True)
         self.video_source = video_source
         self.ok = False
 
@@ -305,25 +283,10 @@ class VideoCapture:
         else:
             return (None, None)
 
-    def rectAvg_to_csv(self, data):
-        header = ['x', 'y', 'w', 'h']
-        # open the file in the write mode
-        with open('rectAvg.csv', 'w+', newline='') as f:
-            # create the csv writer
-            writer = csv.DictWriter(f, fieldnames=header)
-            writer.writeheader()
-            writer.writerows(data)
-
     # added by Montero, Joshua & Gadianne, James & Bohol, Christopher
     def obj_detection(self, frame):
-        # start_time = time.time()
         results = self.obj_detector.score_frame(frame)
         f, self.pf = self.obj_detector.plot_boxes(results, frame)
-        # end_time = time.time()
-        # fps = 1 / np.round(end_time - start_time, 2)
-        # # print(f"Frames Per Second : {fps}")
-        # formatFps = "{:.2f}".format(fps)
-        # cv2.putText(frame, f'FPS: ' + formatFps, (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
 
     # added by Bohol, Christopher
     def edge_detection(self, frame):
@@ -348,7 +311,6 @@ class VideoCapture:
 
         faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1,
                                               minNeighbors=5)  # detecting faces in the frame
-        # edges = cv2.Canny(gray_frame, 100, 200) #generating edge map using Canny Edge Detector
 
         font = cv2.FONT_HERSHEY_SIMPLEX
         fScale = (CamScaleW * CamScaleH) / (900 * 900)
@@ -361,14 +323,12 @@ class VideoCapture:
             # roi_gray = gray_frame[y:y+h, x:x+w] #cropping the face
             HSV_frame = HSV_cv[y:y + h, x:x + w]
             YCbCr_frame = YCbCr_cv[y:y + h, x:x + w]
-            # LUV_frame = LUV_cv[y:y+h, x:x+w]
 
             id_2, conf2 = recognizer.predict(HSV_frame)
             id_3, conf3 = recognizer.predict(YCbCr_frame)
 
             if conf2 >= 50 and conf2 <= 80:
                 # print("HSV!!")
-                # appendRect(x, y, w, h)
                 if (y < 100 or w < 210) or (x >= 230 or w >= 259):
                     self.name = "Position head properly"
                     color = (128, 0, 128)
@@ -384,7 +344,6 @@ class VideoCapture:
                 continue
             if conf3 >= 60 and conf3 <= 80:
                 # print("YCbCr!!")
-                # appendRect(x, y, w, h)
                 self.name = "False"
                 color = (0, 0, 255)
                 cv2.putText(frame, self.name, point, font, fScale, color, stroke, cv2.LINE_AA)
