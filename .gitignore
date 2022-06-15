@@ -1,8 +1,12 @@
+!.gitignore
 .idea
 /venv
 /database
 /__pycache__
+/obj_documents
 /treeClass
+/build
+/dist
 *.avi
 *.jpg
 *.png
@@ -10,3 +14,7 @@
 *.zip
 *.rar
 *.env
+*.spec
+deployYoloModel.py
+
+!*/assets/readmee/*.png
